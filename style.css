@@ -1,63 +1,105 @@
-/* --- Basic Styles --- */
-/* (Pico.css handles font, background, h1, h2, hr) */
+/* --- 1. SETUP & CUSTOM FONT --- */
+:root {
+    /* สร้างตัวแปรสีหลักของเรา */
+    --brand-color: #007bff; /* สีฟ้าสดใส */
+    --brand-color-hover: #0056b3;
+    --green-color: #198754;
+    --green-color-hover: #157347;
+    --card-background: #ffffff;
+    --body-background: #f4f7f6;
+    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+    --card-border: 1px solid #e1e1e1;
+}
+
+/* ตั้งค่า Dark Mode */
+[data-theme="dark"] {
+    --card-background: #2b303a;
+    --body-background: #1d2025;
+    --card-border: 1px solid #3c424e;
+}
+
+/* ใช้ฟอนต์ Sarabun ที่เรา import มา */
+body, button, input, select, textarea {
+    font-family: 'Sarabun', sans-serif;
+}
+
+/* --- 2. LAYOUT & CARD UI --- */
 body {
-    padding-bottom: 20px;
+    background-color: var(--body-background);
+    color: var(--pico-color);
 }
 
-/* Constrain the max width for better reading */
-main.container {
+/* นี่คือ "การ์ด" หลักที่ลอยอยู่ตรงกลาง */
+main.container-card {
     max-width: 800px;
+    margin: 2rem auto; /* เว้นระยะห่างด้านบนและล่าง */
+    padding: 1.5rem 2rem;
+    background-color: var(--card-background);
+    border-radius: var(--pico-border-radius);
+    box-shadow: var(--card-shadow);
+    border: var(--card-border);
 }
 
-/* --- Map Style --- */
+/* --- 3. SECTIONS (Filter & Forms) --- */
+/* เราใช้ <article> ในการจัดกลุ่ม */
+article.filter-container,
+article.form-container {
+    background-color: var(--body-background); /* ใช้สีพื้นหลังรอง */
+    border: var(--card-border);
+    padding: 1.5rem;
+    border-radius: var(--pico-border-radius);
+    margin-bottom: var(--pico-spacing);
+}
+
+.section-title {
+    margin-top: 0;
+    border-bottom: 2px solid var(--brand-color);
+    padding-bottom: 10px;
+    display: inline-block; /* ทำให้ขีดเส้นใต้พอดีกับตัวอักษร */
+}
+
+/* --- 4. MAP & STATUS --- */
 #map {
     height: 500px;
     width: 100%;
-    /* Use Pico's border radius & spacing */
-    border-radius: var(--pico-border-radius); 
+    border-radius: var(--pico-border-radius);
     margin-bottom: var(--pico-spacing);
+    border: var(--card-border);
 }
 
-/* --- Status Messages --- */
-#status, .status-message {
-    text-align: center;
+#status {
+    font-size: 1.1em;
+    font-weight: 500;
 }
 .status-message.success {
-    color: var(--pico-color-green-500); /* Use Pico's green */
+    color: var(--green-color);
 }
 .status-message.error {
-    color: var(--pico-color-red-500); /* Use Pico's red */
+    color: var(--pico-color-red-500);
 }
 
-/* --- Filter Container --- */
-/* (Pico's <section> style is enough) */
-.filter-container {
-    margin-bottom: var(--pico-spacing);
+/* --- 5. BUTTONS & FORMS --- */
+/* อัปเกรดปุ่มเพิ่มห้องน้ำ (สีหลัก) */
+#add-restroom-form button[type="submit"] {
+    background-color: var(--brand-color);
+    border-color: var(--brand-color);
 }
-.filter-options {
-    gap: var(--pico-grid-spacing-horizontal);
-    margin-bottom: var(--pico-spacing);
-}
-
-/* --- Form Container --- */
-/* (Pico's <section> style is enough) */
-.form-container {
-     margin-bottom: var(--pico-spacing);
+#add-restroom-form button[type="submit"]:hover {
+    background-color: var(--brand-color-hover);
+    border-color: var(--brand-color-hover);
 }
 
-/* --- Donation Section --- */
-footer {
-    text-align: center;
+/* อัปเกรดปุ่ม Filter (สีเขียว) */
+#filter-button {
+    background-color: var(--green-color);
+    border-color: var(--green-color);
 }
-.qr-code {
-    width: 250px;
-    height: 250px;
-    max-width: 80%;
-    border-radius: var(--pico-border-radius);
+#filter-button:hover {
+    background-color: var(--green-color-hover);
+    border-color: var(--green-color-hover);
 }
 
-/* --- Review Modal Styles --- */
-/* (Styles for the new <dialog> tag) */
+/* --- 6. MODAL (POPUP) --- */
 dialog article {
     width: 90vw;
     max-width: 600px;
@@ -77,12 +119,12 @@ dialog header h2 {
     font-weight: bold;
     color: var(--pico-color);
     cursor: pointer;
+    padding: 0;
 }
 
-/* --- Fix Leaflet Popup Style --- */
-/* (This makes the map popups match the Pico.css theme) */
+/* --- 7. LEAFLET POPUP FIX --- */
 .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-    background: var(--pico-background-color);
+    background: var(--card-background);
     color: var(--pico-color);
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
@@ -91,4 +133,23 @@ dialog header h2 {
     font-size: 0.9em;
     padding: 8px;
     margin-top: 10px;
+    background-color: var(--brand-color);
+    border-color: var(--brand-color);
+    color: white;
+}
+.leaflet-popup-content-wrapper button:hover {
+    background-color: var(--brand-color-hover);
+    border-color: var(--brand-color-hover);
+}
+
+/* --- 8. DONATION & FOOTER --- */
+footer {
+    text-align: center;
+    opacity: 0.8;
+}
+.qr-code {
+    width: 200px; /* ลดขนาด QR ให้นิดหน่อย */
+    height: 200px;
+    max-width: 80%;
+    border-radius: var(--pico-border-radius);
 }
