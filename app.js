@@ -1,11 +1,20 @@
 // -----------------------------------------------------------------
-// ⬇️ Your Deployed Google Script URL is now included! ⬇️
+// ⬇️ Your Deployed Google Script URL (This is for WRITING data) ⬇️
 // -----------------------------------------------------------------
 const googleScriptURL = 'https://script.google.com/macros/s/AKfycbyDS083V8prS-oLLfiMPwZW8t_PKiNvsRu00Mb3M_-dU6zcqB192S_1pIUIX_wtkZ3r/exec';
 // -----------------------------------------------------------------
 
-// This is the public URL for READING the CSV
+// -----------------------------------------------------------------
+// ⬇️ Your Public Google Sheet CSV URL (This is for READING data) ⬇️
+// -----------------------------------------------------------------
+// !! IMPORTANT !! You MUST update this link.
+// 1. Go to your Google Sheet, click the "Location" tab.
+// 2. Go to File > Share > Publish to the web.
+// 3. Select "Location" and "Comma-separated values (.csv)".
+// 4. Click "Publish" and copy the NEW link here.
 const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?output=csv';
+// -----------------------------------------------------------------
+
 
 // Get references to all HTML elements
 const mapElement = document.getElementById('map');
@@ -48,8 +57,14 @@ async function onLocationSuccess(position) {
     statusElement.innerText = "กำลังค้นหาห้องน้ำจาก Google Sheet...";
 
     try {
-        // We add a 'cache buster' to the URL to make sure we get new data
+        // We add a 'cache buster' (?t=...timestamp) to the URL 
+        // to make sure we always get the freshest data
         const response = await fetch(googleSheetURL + '&t=' + new Date().getTime());
+        
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
         const csvText = await response.text();
         const restrooms = parseCSV(csvText);
 
@@ -66,10 +81,13 @@ async function onLocationSuccess(position) {
 
     } catch (error) {
         console.error('Error fetching or parsing sheet:', error);
-        statusElement.innerText = 'เกิดข้อผิดพลาดในการโหลดข้อมูลห้องน้ำ';
+        statusElement.innerText = 'เกิดข้อผิดพลาดในการโหลดแผนที่ (Fetch error)';
     }
 }
 
+/**
+ * Called if we cannot get the user's location
+ */
 function onLocationError(error) {
     console.error('Geolocation error:', error);
     statusElement.innerText = 'ไม่สามารถรับตำแหน่งของคุณได้ โปรดอนุญาตให้แชร์ตำแหน่ง';
@@ -200,7 +218,6 @@ addRestroomForm.addEventListener('submit', function(e) {
     // Send the data to our Google Apps Script
     fetch(googleScriptURL, {
         method: 'POST',
-        // mode: 'no-cors' // Use this if you get a CORS error
         body: JSON.stringify(data),
         headers: { 'Content-Type': 'application/json' }
     })
@@ -258,7 +275,6 @@ reviewForm.addEventListener('submit', function(e) {
     // Send the data to our Google Apps Script
     fetch(googleScriptURL, {
         method: 'POST',
-        // mode: 'no-cors' // Use this if you get a CORS error
         body: JSON.stringify(data),
         headers: { 'Content-Type': 'application/json' }
     })
