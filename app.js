@@ -8,7 +8,7 @@ const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsed
 //  --- GLOBAL VARIABLES ---
 // =======================================================
 let map = null;
-let userLocation = null; // Stores the *initial* location for centering the map
+let userLocation = null; // Stores the *initial* location
 let allRestrooms = []; 
 let currentMarkers = []; 
 
@@ -66,7 +66,6 @@ async function onLocationSuccess(position) {
 
     statusElement.innerText = "กำลังดึงข้อมูลห้องน้ำ...";
     try {
-        // (Fetch CSV data)
         const response = await fetch(googleSheetURL + '&t=' + new Date().getTime());
         if (!response.ok) throw new Error('Network response was not ok');
         const csvText = await response.text();
@@ -117,16 +116,37 @@ function parseCSV(csvText) {
     }).filter(restroom => restroom !== null && !isNaN(restroom.lat) && !isNaN(restroom.lon));
 }
 
+/**
+ * Calculates distance between two GPS coordinates
+ */
 function getDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371;
+    const R = 6371; // Radius of the Earth in km
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
               Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
+    return R * c; // Distance in km
 }
+
+// ⬇️ --- (1) NEW HELPER FUNCTION --- ⬇️
+/**
+ * Formats distance in km to a readable string (km or m)
+ */
+function formatDistance(km) {
+    if (km < 1) {
+        // If less than 1km, show in meters
+        const meters = Math.round(km * 1000);
+        return `${meters} ม.`; // "ม." = "m"
+    } else {
+        // If 1km or more, show in km with 1 decimal place
+        const distKm = km.toFixed(1);
+        return `${distKm} กม.`; // "กม." = "km"
+    }
+}
+// ⬆️ --- END OF NEW FUNCTION --- ⬆️
+
 
 // =======================================================
 //  --- FILTERING LOGIC ---
@@ -139,21 +159,38 @@ function clearAllMarkers() {
     currentMarkers = [];
 }
 
+// ⬇️ --- (2) UPDATED THIS FUNCTION --- ⬇️
+/**
+ * Draws a specific set of restrooms on the map
+ */
 function drawRestroomMarkers(restroomsToDraw) {
     restroomsToDraw.forEach(restroom => {
+        
+        // --- NEW ---
+        // Calculate distance from user's *initial* location
+        const distance = getDistance(userLocation.lat, userLocation.lon, restroom.lat, restroom.lon);
+        // Format it nicely
+        const distanceStr = formatDistance(distance);
+        // --- END NEW ---
+
+        // Create popup content with new details
         const popupContent = `
             <b>${restroom.name}</b><br>
-            <small>
+            <big>📍 ${distanceStr} จากตำแหน่งของคุณ</big><br> <small>
                 <b>สภาพ:</b> ${restroom.condition || 'N/A'}<br>
                 <b>ทิชชู่:</b> ${restroom.hasPaper || 'N/A'}<br>
                 <b>สายฉีด:</b> ${restroom.hasSpray || 'N/A'}
             </small><br>
             <button class="review-button" data-name="${restroom.name}">เขียนรีวิว</button>
         `;
+        
         const marker = L.marker([restroom.lat, restroom.lon]).addTo(map)
             .bindPopup(popupContent);
-        currentMarkers.push(marker);
+        
+        currentMarkers.push(marker); // Store marker to be able to remove it
     });
+
+    // Add listener for review buttons (must be re-added)
     map.on('popupopen', function(e) {
         const reviewButton = e.popup._container.querySelector('.review-button');
         if (reviewButton) {
@@ -164,22 +201,45 @@ function drawRestroomMarkers(restroomsToDraw) {
         }
     });
 }
+// ⬆️ --- END OF UPDATED FUNCTION --- ⬆️
 
+/**
+ * Main filter function
+ */
 function applyFilters() {
+    // 1. Get filter values
     const wantPaper = filterPaper.checked;
     const wantSpray = filterSpray.checked;
     const wantCondition = filterCondition.value;
+
     statusElement.innerText = 'กำลังฟิลเตอร์...';
+
+    // 2. Filter the global 'allRestrooms' array
     const filteredRestrooms = allRestrooms.filter(restroom => {
-        if (wantPaper && restroom.hasPaper !== 'Yes') return false;
-        if (wantSpray && restroom.hasSpray !== 'Yes') return false;
-        if (wantCondition !== 'any' && restroom.condition !== wantCondition) return false;
+        // Check paper
+        if (wantPaper && restroom.hasPaper !== 'Yes') {
+            return false;
+        }
+        // Check spray
+        if (wantSpray && restroom.hasSpray !== 'Yes') {
+            return false;
+        }
+        // Check condition
+        if (wantCondition !== 'any' && restroom.condition !== wantCondition) {
+            return false;
+        }
+        // If it passes all checks, keep it
         return true;
     });
+
+    // 3. Clear old markers
     clearAllMarkers();
+
+    // 4. Draw new, filtered markers
     drawRestroomMarkers(filteredRestrooms);
     statusElement.innerText = `แสดงผล ${filteredRestrooms.length} จาก ${allRestrooms.length} แห่ง`;
 }
+
 
 // =======================================================
 //  --- FORM SUBMISSION LOGIC (WITH LOCATION FIX) ---
