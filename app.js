@@ -8,7 +8,7 @@ const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsed
 //  --- GLOBAL VARIABLES ---
 // =======================================================
 let map = null;
-let userLocation = null; // เรายังคงเก็บตำแหน่งแรกไว้สำหรับจุดศูนย์กลางแผนที่
+let userLocation = null; // Stores the *initial* location for centering the map
 let allRestrooms = []; 
 let currentMarkers = []; 
 
@@ -56,7 +56,7 @@ reviewModal.addEventListener('click', (e) => {
 // =======================================================
 
 async function onLocationSuccess(position) {
-    userLocation = { // บันทึกตำแหน่ง *แรก* ไว้สำหรับจุดศูนย์กลางแผนที่
+    userLocation = { // Store the *initial* location
         lat: position.coords.latitude,
         lon: position.coords.longitude
     };
@@ -66,7 +66,7 @@ async function onLocationSuccess(position) {
 
     statusElement.innerText = "กำลังดึงข้อมูลห้องน้ำ...";
     try {
-        // (ส่วนนี้เหมือนเดิม... ดึงข้อมูล CSV)
+        // (Fetch CSV data)
         const response = await fetch(googleSheetURL + '&t=' + new Date().getTime());
         if (!response.ok) throw new Error('Network response was not ok');
         const csvText = await response.text();
@@ -182,15 +182,14 @@ function applyFilters() {
 }
 
 // =======================================================
-//  --- FORM SUBMISSION LOGIC (UPDATED) ---
+//  --- FORM SUBMISSION LOGIC (WITH LOCATION FIX) ---
 // =======================================================
 
 // --- "Add New Restroom" Form ---
-// ⬇️⬇️ นี่คือส่วนที่แก้ไข ⬇️⬇️
 addRestroomForm.addEventListener('submit', function(e) {
     e.preventDefault();
     
-    // ดึงข้อมูลจากฟอร์มมาก่อน
+    // Get form data first
     const name = newRestroomNameInput.value;
     const hasPaper = newPaperCheckbox.checked ? 'Yes' : 'No';
     const hasSpray = newSprayCheckbox.checked ? 'Yes' : 'No';
@@ -205,11 +204,11 @@ addRestroomForm.addEventListener('submit', function(e) {
     addStatus.innerText = 'กำลังค้นหาตำแหน่งปัจจุบันของคุณ...';
     addStatus.className = 'status-message';
 
-    // 1. ขอตำแหน่ง GPS ใหม่เดี๋ยวนี้
+    // 1. Get a FRESH, NEW location *right now*
     navigator.geolocation.getCurrentPosition(
-        function(position) { // (A) ถ้าขอตำแหน่งสำเร็จ
+        function(position) { // (A) If getting location is successful
             
-            // 2. เอาตำแหน่งใหม่ (fresh location) มาใช้
+            // 2. Use this new location
             const freshLat = position.coords.latitude;
             const freshLon = position.coords.longitude;
 
@@ -218,14 +217,14 @@ addRestroomForm.addEventListener('submit', function(e) {
             const data = {
                 type: 'new_restroom',
                 name: name,
-                lat: freshLat, // <-- ใช้ตำแหน่งใหม่
-                lon: freshLon, // <-- ใช้ตำแหน่งใหม่
+                lat: freshLat, // <-- Use the NEW location
+                lon: freshLon, // <-- Use the NEW location
                 hasPaper: hasPaper,
                 hasSpray: hasSpray,
                 condition: condition
             };
 
-            // 3. ส่งข้อมูลไปที่ Vercel Proxy (เหมือนเดิม)
+            // 3. Send data to the Vercel Proxy
             fetch(googleScriptURL, {
                 method: 'POST',
                 body: JSON.stringify(data),
@@ -247,7 +246,7 @@ addRestroomForm.addEventListener('submit', function(e) {
             });
 
         }, 
-        function(error) { // (B) ถ้าขอตำแหน่งไม่สำเร็จ
+        function(error) { // (B) If getting location fails
             console.error('Error getting fresh location:', error);
             addStatus.innerText = 'เกิดข้อผิดพลาด: ไม่สามารถรับตำแหน่งปัจจุบันของคุณได้';
             addStatus.className = 'status-message error';
@@ -256,7 +255,7 @@ addRestroomForm.addEventListener('submit', function(e) {
 });
 
 
-// --- "Review Modal" Logic (เหมือนเดิม) ---
+// --- "Review Modal" Logic (No changes here) ---
 function openReviewModal(restroomName) {
     reviewTitle.innerText = `เขียนรีวิวสำหรับ "${restroomName}"`;
     reviewRestroomNameInput.value = restroomName;
