@@ -171,3 +171,54 @@ footer {
         height: 500px;
     }
 }
+
+/* --- 9. NEW: REVIEW LIST STYLES --- */
+
+/* Style for the "View Reviews" button */
+.leaflet-popup-content-wrapper .view-reviews-button {
+    background-color: #545b62; /* A secondary, greyish color */
+    border-color: #545b62;
+    color: #ffffff;
+    margin-top: 5px;
+}
+.leaflet-popup-content-wrapper .view-reviews-button:hover {
+    background-color: #42464b;
+    border-color: #42464b;
+}
+
+/* Container for all the reviews */
+.reviews-container {
+    margin-top: 15px;
+    max-height: 150px; /* Add a scrollbar if there are too many reviews */
+    overflow-y: auto;
+    border-top: 1px solid var(--card-border, #eee);
+    padding-top: 10px;
+}
+
+.reviews-container em { /* Style for 'Loading...' or 'No reviews' text */
+    color: #888;
+}
+
+/* Style for each individual review item */
+.review-item {
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--card-border, #eee);
+}
+
+.review-item:last-child {
+    border-bottom: none;
+}
+
+.review-item strong {
+    color: #ffc107; /* Yellow for stars */
+}
+
+.review-item p {
+    margin: 5px 0;
+    font-style: italic;
+    color: var(--pico-color, #111); /* Ensure text is readable */
+}
+
+.review-item small {
+    opacity: 0.8;
+}
