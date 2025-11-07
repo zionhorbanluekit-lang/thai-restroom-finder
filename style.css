@@ -1,148 +1,94 @@
 /* --- Basic Styles --- */
+/* (Pico.css handles font, background, h1, h2, hr) */
 body {
-    font-family: sans-serif;
-    margin: 0;
-    padding: 0 10px 20px 10px;
-    background-color: #f4f4f4;
+    padding-bottom: 20px;
 }
 
+/* Constrain the max width for better reading */
+main.container {
+    max-width: 800px;
+}
+
+/* --- Map Style --- */
 #map {
     height: 500px;
     width: 100%;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    margin-bottom: 15px;
+    /* Use Pico's border radius & spacing */
+    border-radius: var(--pico-border-radius); 
+    margin-bottom: var(--pico-spacing);
 }
 
-h1, h2 {
-    text-align: center;
-    color: #333;
-}
-
+/* --- Status Messages --- */
 #status, .status-message {
     text-align: center;
-    font-size: 0.9em;
-    color: #555;
 }
-
 .status-message.success {
-    color: green;
+    color: var(--pico-color-green-500); /* Use Pico's green */
 }
 .status-message.error {
-    color: red;
+    color: var(--pico-color-red-500); /* Use Pico's red */
 }
 
-hr {
-    border: 0;
-    border-top: 1px solid #ddd;
-    margin: 25px 0;
+/* --- Filter Container --- */
+/* (Pico's <section> style is enough) */
+.filter-container {
+    margin-bottom: var(--pico-spacing);
+}
+.filter-options {
+    gap: var(--pico-grid-spacing-horizontal);
+    margin-bottom: var(--pico-spacing);
 }
 
 /* --- Form Container --- */
+/* (Pico's <section> style is enough) */
 .form-container {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    max-width: 600px;
-    margin: 20px auto;
-}
-.form-container h2 {
-    margin-top: 0;
-}
-.form-container input[type="text"] {
-    width: 100%;
-    padding: 10px;
-    box-sizing: border-box; /* Important */
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-bottom: 10px;
-}
-.form-container button {
-    width: 100%;
-    padding: 12px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 1em;
-    cursor: pointer;
-}
-.form-container button:hover {
-    background-color: #0056b3;
+     margin-bottom: var(--pico-spacing);
 }
 
 /* --- Donation Section --- */
-.donation-section {
+footer {
     text-align: center;
-    margin-top: 20px;
-    padding: 10px;
 }
-
 .qr-code {
     width: 250px;
     height: 250px;
     max-width: 80%;
-    border: 1px solid #eee;
-    border-radius: 8px;
+    border-radius: var(--pico-border-radius);
 }
 
 /* --- Review Modal Styles --- */
-.modal-overlay {
-    display: none; /* Hidden by default */
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.5); /* Black background with opacity */
+/* (Styles for the new <dialog> tag) */
+dialog article {
+    width: 90vw;
+    max-width: 600px;
 }
-
-.modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    border-radius: 8px;
-    width: 80%;
-    max-width: 500px;
-    position: relative;
+dialog header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
-
+dialog header h2 {
+    margin-bottom: 0;
+}
 .close-modal {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
     font-weight: bold;
+    color: var(--pico-color);
     cursor: pointer;
 }
 
-#review-form label {
-    display: block;
-    margin-top: 10px;
+/* --- Fix Leaflet Popup Style --- */
+/* (This makes the map popups match the Pico.css theme) */
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+    background: var(--pico-background-color);
+    color: var(--pico-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-#review-form select,
-#review-form textarea {
+.leaflet-popup-content-wrapper button {
     width: 100%;
+    font-size: 0.9em;
     padding: 8px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-top: 5px;
-}
-#review-form button {
-    width: 100%;
-    padding: 12px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 1em;
-    cursor: pointer;
-    margin-top: 15px;
-}
-#review-form button:hover {
-    background-color: #218838;
+    margin-top: 10px;
 }
