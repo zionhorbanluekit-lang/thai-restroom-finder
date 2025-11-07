@@ -2,7 +2,7 @@
 // ⬇️ THIS IS THE ONLY LINE THAT HAS CHANGED ⬇️
 // -----------------------------------------------------------------
 // We now point to our own proxy API file, not Google
-const googleScriptURL = '/api/gas-proxy';
+const googleScriptURL = '/gas-proxy';
 // -----------------------------------------------------------------
 
 // This is the public URL for READING the CSV (this does not change)
@@ -290,3 +290,4 @@ reviewForm.addEventListener('submit', function(e) {
         reviewStatus.className = 'status-message error';
     });
 });
+
