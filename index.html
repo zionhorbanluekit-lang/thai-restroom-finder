@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" data-theme="auto"> 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ค้นหาห้องน้ำที่ใกล้ที่สุด</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
@@ -11,36 +13,78 @@
 </head>
 <body>
 
-    <h1>ค้นหาห้องน้ำที่ใกล้ที่สุด</h1>
-    
-    <div id="map"></div>
-    
-    <p id="status">กำลังค้นหาตำแหน่งของคุณ...</p>
+    <main class="container">
 
-    <div class="form-container">
-        <h2>📍 เพิ่มห้องน้ำใหม่</h2>
-        <p>ยืนอยู่ที่หน้าห้องน้ำ? เพิ่มที่นี่เลย!</p>
-        <form id="add-restroom-form">
-            <input type="text" id="new-restroom-name" placeholder="ชื่อห้องน้ำ (เช่น PTT...)" required>
-            <button type="submit">เพิ่มที่ตำแหน่งปัจจุบันของฉัน</button>
-            <p id="add-status" class="status-message"></p>
-        </form>
-    </div>
+        <hgroup>
+            <h1>ค้นหาห้องน้ำที่ใกล้ที่สุด</h1>
+            <p id="status">กำลังค้นหาตำแหน่งของคุณ...</p>
+        </hgroup>
+        
+        <section class="filter-container">
+            <h3>ตัวกรอง (Filter)</h3>
+            <div class="filter-options grid">
+                <label>
+                    <input type="checkbox" id="filter-paper"> มีทิชชู่
+                </label>
+                <label>
+                    <input type="checkbox" id="filter-spray"> มีสายฉีด
+                </label>
+                <select id="filter-condition">
+                    <option value="any">สภาพ (ทั้งหมด)</option>
+                    <option value="Excellent">ยอดเยี่ยม</option>
+                    <option value="Well">ดี</option>
+                    <option value="Bad">แย่</option>
+                </select>
+            </div>
+            <button id="filter-button" class="contrast">ค้นหา</button>
+        </section>
+
+        <div id="map"></div>
+
+        <section class="form-container">
+            <h2>📍 เพิ่มห้องน้ำใหม่</h2>
+            <p>ยืนอยู่ที่หน้าห้องน้ำ? เพิ่มที่นี่เลย!</p>
+            <form id="add-restroom-form">
+                <input type="text" id="new-restroom-name" placeholder="ชื่อห้องน้ำ (เช่น PTT...)" required>
+                
+                <fieldset>
+                    <legend>มีอะไรบ้าง:</legend>
+                    <label>
+                        <input type="checkbox" id="new-paper"> ทิชชู่
+                    </label>
+                    <label>
+                        <input type="checkbox" id="new-spray"> สายฉีด
+                    </label>
+                </fieldset>
+                
+                <label for="new-condition">สภาพโดยรวม:</label>
+                <select id="new-condition" required>
+                    <option value="" disabled selected>-- เลือกสภาพ --</option>
+                    <option value="Excellent">ยอดเยี่ยม (Excellent)</option>
+                    <option value="Well">ดี (Well)</option>
+                    <option value="Bad">แย่ (Bad)</option>
+                </select>
+
+                <button type="submit">เพิ่มที่ตำแหน่งปัจจุบันของฉัน</button>
+                <p id="add-status" class="status-message"></p>
+            </form>
+        </section>
 
 
-    <hr>
-    <div class="donation-section">
-        <h3>สนับสนุนค่ากาแฟ ☕</h3>
-        <p>แอปนี้ใช้งานได้ฟรี หากคุณต้องการสนับสนุนผู้พัฒนา:</p>
-        <img src="donate.jpg" alt="สแกนเพื่อบริจาค (PromptPay)" class="qr-code">
-    </div>
+        <footer>
+            <hr>
+            <h3>สนับสนุนค่ากาแฟ ☕</h3>
+            <p>แอปนี้ใช้งานได้ฟรี หากคุณต้องการสนับสนุนผู้พัฒนา:</p>
+            <img src="donate.jpg" alt="สแกนเพื่อบริจาค (PromptPay)" class="qr-code">
+        </footer>
 
-
-    <div id="review-modal" class="modal-overlay">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
+    </main> <dialog id="review-modal">
+        <article>
+            <header>
+                <button aria-label="Close" class="close-modal" data-target="review-modal">×</button>
+                <h2 id="review-title">เขียนรีวิวสำหรับ...</h2>
+            </header>
             
-            <h2 id="review-title">เขียนรีวิวสำหรับ...</h2>
             <form id="review-form">
                 <input type="hidden" id="review-restroom-name">
                 
@@ -56,15 +100,17 @@
                 <label for="review-comment">ความคิดเห็น:</label>
                 <textarea id="review-comment" rows="4" placeholder="ห้องน้ำสะอาดมาก..."></textarea>
                 
+                <label for="reviewer-name">ชื่อของคุณ (ไม่บังคับ):</label>
+                <input type="text" id="reviewer-name" placeholder="Zion">
+                
                 <button type="submit">ส่งรีวิว</button>
                 <p id="review-status" class="status-message"></p>
             </form>
-        </div>
-    </div>
+        </article>
+    </dialog>
 
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
     <script src="app.js"></script>
 </body>
 </html>
