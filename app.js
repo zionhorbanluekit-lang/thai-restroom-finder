@@ -1,20 +1,12 @@
 // -----------------------------------------------------------------
-// ⬇️ Your Deployed Google Script URL (This is for WRITING data) ⬇️
+// ⬇️ THIS IS THE ONLY LINE THAT HAS CHANGED ⬇️
 // -----------------------------------------------------------------
-const googleScriptURL = 'https://script.google.com/macros/s/AKfycbyDS083V8prS-oLLfiMPwZW8t_PKiNvsRu00Mb3M_-dU6zcqB192S_1pIUIX_wtkZ3r/exec';
+// We now point to our own proxy API file, not Google
+const googleScriptURL = '/api/gas-proxy';
 // -----------------------------------------------------------------
 
-// -----------------------------------------------------------------
-// ⬇️ Your Public Google Sheet CSV URL (This is for READING data) ⬇️
-// -----------------------------------------------------------------
-// !! IMPORTANT !! You MUST update this link.
-// 1. Go to your Google Sheet, click the "Location" tab.
-// 2. Go to File > Share > Publish to the web.
-// 3. Select "Location" and "Comma-separated values (.csv)".https://script.google.com/macros/s/AKfycbyDS083V8prS-oLLfiMPwZW8t_PKiNvsRu00Mb3M_-dU6zcqB192S_1pIUIX_wtkZ3r/exec
-// 4. Click "Publish" and copy the NEW link here.
+// This is the public URL for READING the CSV (this does not change)
 const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?output=csv';
-// -----------------------------------------------------------------
-
 
 // Get references to all HTML elements
 const mapElement = document.getElementById('map');
@@ -187,6 +179,8 @@ function getDistance(lat1, lon1, lat2, lon2) {
 
 // =======================================================
 // NEW LOGIC (Writing Data)
+// =You'll see the fetch() calls below now go to 'googleScriptURL',
+// which is your new '/api/gas-proxy' file.
 // =======================================================
 
 // --- "Add New Restroom" Form ---
@@ -215,7 +209,7 @@ addRestroomForm.addEventListener('submit', function(e) {
         lon: userLocation.lon
     };
 
-    // Send the data to our Google Apps Script
+    // Send the data to our '/api/gas-proxy'
     fetch(googleScriptURL, {
         method: 'POST',
         body: JSON.stringify(data),
@@ -236,65 +230,4 @@ addRestroomForm.addEventListener('submit', function(e) {
         }
     })
     .catch(error => {
-        addStatus.innerText = 'เกิดข้อผิดพลาด: ' + error.message;
-        addStatus.className = 'status-message error';
-    });
-});
-
-
-// --- "Review Modal" Logic ---
-function openReviewModal(restroomName) {
-    reviewTitle.innerText = `เขียนรีวิวสำหรับ "${restroomName}"`;
-    reviewRestroomNameInput.value = restroomName; // Set hidden input
-    reviewModal.style.display = 'block'; // Show the modal
-    reviewStatus.innerText = '';
-    reviewForm.reset(); // Clear old values
-}
-
-closeModalButton.onclick = function() {
-    reviewModal.style.display = 'none'; // Hide the modal
-}
-window.onclick = function(event) {
-    if (event.target == reviewModal) {
-        reviewModal.style.display = 'none'; // Hide if user clicks outside
-    }
-}
-
-reviewForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    reviewStatus.innerText = 'กำลังส่งรีวิว...';
-    reviewStatus.className = 'status-message';
-
-    const data = {
-        type: 'new_comment',
-        restroomName: reviewRestroomNameInput.value,
-        stars: reviewStarsInput.value,
-        comment: reviewCommentInput.value
-    };
-
-    // Send the data to our Google Apps Script
-    fetch(googleScriptURL, {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' }
-    })
-    .then(res => res.json())
-    .then(response => {
-        if (response.status === 'success') {
-            reviewStatus.innerText = 'ส่งรีวิวสำเร็จแล้ว!';
-            reviewStatus.className = 'status-message success';
-            // Close modal after 1.5 seconds
-            setTimeout(() => {
-                reviewModal.style.display = 'none';
-            }, 1500);
-        } else {
-            throw new Error(response.message);
-        }
-    })
-    .catch(error => {
-        reviewStatus.innerText = 'เกิดข้อผิดพลาด: ' + error.message;
-        reviewStatus.className = 'status-message error';
-    });
-});
-
-
+        addStatus.innerText = 'เกิดข้อ
