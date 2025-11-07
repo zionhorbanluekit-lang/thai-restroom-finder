@@ -2,13 +2,18 @@
 //  --- CONFIGURATION ---
 // =======================================================
 const googleScriptURL = '/api/gas-proxy'; // Vercel Proxy URL
-
-// ⬇️ (1) URL ชีต "Location" ของคุณ (เหมือนเดิม) ⬇️
 const locationSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A6VHonp/pub?output=csv';
+const commentSheetURL = 'YOUR_NEW_PUBLISHED_COMMENT_SHEET_URL_HERE'; // ⚠️ Make sure this is correct
 
-// ⬇️ (2) ⚠️ วาง URL ของชีต "Comment" ที่คุณเพิ่งคัดลอกมาที่นี่ ⬇️
-const commentSheetURL = 'YOUR_NEW_PUBLISHED_COMMENT_SHEET_URL_HERE'; 
-// =======================================================
+// ⬇️ --- (1) NEW: DEFINE YOUR CUSTOM ICON --- ⬇️
+const restroomIcon = L.icon({
+    iconUrl: 'pin.svg', // <-- The name of your uploaded SVG file
+    
+    iconSize:     [38, 38], // (width, height) - Adjust as needed
+    iconAnchor:   [19, 38], // (half of width, full height) - The tip of the pin
+    popupAnchor:  [0, -38]  // (from iconAnchor) - Where popup opens
+});
+// ⬆️ --- END OF NEW ICON --- ⬆️
 
 
 // =======================================================
@@ -17,7 +22,7 @@ const commentSheetURL = 'YOUR_NEW_PUBLISHED_COMMENT_SHEET_URL_HERE';
 let map = null;
 let userLocation = null;
 let allRestrooms = []; 
-let allComments = []; // ⬅️ NEW: เราจะเก็บรีวิวทั้งหมดไว้ที่นี่
+let allComments = [];
 let currentMarkers = []; 
 
 // =======================================================
@@ -73,7 +78,7 @@ async function onLocationSuccess(position) {
 
     statusElement.innerText = "กำลังดึงข้อมูลห้องน้ำ...";
     try {
-        // (1) Fetch Locations (same as before)
+        // (1) Fetch Locations
         const response = await fetch(locationSheetURL + '&t=' + new Date().getTime());
         if (!response.ok) throw new Error('Network response was not ok');
         const csvText = await response.text();
@@ -83,14 +88,14 @@ async function onLocationSuccess(position) {
              statusElement.innerText = 'ไม่พบข้อมูลห้องน้ำใน Google Sheet';
         }
 
-        // (2) ⬅️ NEW: Fetch all Comments
+        // (2) Fetch all Comments
         statusElement.innerText = `พบ ${allRestrooms.length} ห้องน้ำ. กำลังโหลดรีวิว...`;
         const commentResponse = await fetch(commentSheetURL + '&t=' + new Date().getTime());
         if (!commentResponse.ok) throw new Error('Could not fetch comments');
         const commentCsvText = await commentResponse.text();
-        allComments = parseCommentCSV(commentCsvText); // Save to global variable
+        allComments = parseCommentCSV(commentCsvText);
 
-        // (3) Draw markers (now that we have all data)
+        // (3) Draw markers
         drawRestroomMarkers(allRestrooms);
         statusElement.innerText = `พบ ${allRestrooms.length} ห้องน้ำ และ ${allComments.length} รีวิว.`;
 
@@ -105,19 +110,28 @@ function onLocationError(error) {
     statusElement.innerText = 'ไม่สามารถรับตำแหน่งของคุณได้ โปรดอนุญาตให้แชร์ตำแหน่ง';
 }
 
+// ⬇️ --- (2) UPDATED THIS FUNCTION --- ⬇️
+/**
+ * Loads the basic map and user's location marker
+ */
 function loadMap(userLat, userLon) {
     map = L.map('map').setView([userLat, userLon], 15);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap'
     }).addTo(map);
-    L.marker([userLat, userLon]).addTo(map)
+
+    // NEW: Use a blue circle for "Your Location"
+    L.circleMarker([userLat, userLon], {
+        radius: 10,
+        color: '#007bff',
+        fillColor: '#007bff',
+        fillOpacity: 0.8
+    }).addTo(map)
         .bindPopup('<b>ตำแหน่งของคุณ</b>')
         .openPopup();
 }
+// ⬆️ --- END OF UPDATED FUNCTION --- ⬆️
 
-/**
- * ⬅️ RENAMED: from parseCSV to parseLocationCSV
- */
 function parseLocationCSV(csvText) {
     const lines = csvText.trim().split('\n');
     const dataLines = lines.slice(1);
@@ -137,9 +151,6 @@ function parseLocationCSV(csvText) {
     }).filter(restroom => restroom !== null && !isNaN(restroom.lat) && !isNaN(restroom.lon));
 }
 
-/**
- * ⬅️ NEW: Function to parse the Comment CSV
- */
 function parseCommentCSV(csvText) {
     const lines = csvText.trim().split('\n');
     const dataLines = lines.slice(1); // Remove header
@@ -189,15 +200,15 @@ function clearAllMarkers() {
     currentMarkers = [];
 }
 
+// ⬇️ --- (3) UPDATED THIS FUNCTION --- ⬇️
 /**
- * ⬅️ UPDATED: drawRestroomMarkers
+ * Draws a specific set of restrooms on the map
  */
 function drawRestroomMarkers(restroomsToDraw) {
     restroomsToDraw.forEach(restroom => {
         const distance = getDistance(userLocation.lat, userLocation.lon, restroom.lat, restroom.lon);
         const distanceStr = formatDistance(distance);
         
-        // ⬅️ NEW: Updated popup content
         const popupContent = `
             <b>${restroom.name}</b><br>
             <big>📍 ${distanceStr} จากตำแหน่งของคุณ</big><br>
@@ -208,19 +219,20 @@ function drawRestroomMarkers(restroomsToDraw) {
             </small><br>
             <button class="review-button" data-name="${restroom.name}">เขียนรีวิว</button>
             <button class="view-reviews-button" data-name="${restroom.name}">ดูรีวิวทั้งหมด</button>
-            <div class="reviews-container"></div> `;
+            <div class="reviews-container"></div>
+        `;
         
-        const marker = L.marker([restroom.lat, restroom.lon]).addTo(map)
+        // NEW: Add the "icon: restroomIcon" option here
+        const marker = L.marker([restroom.lat, restroom.lon], { icon: restroomIcon })
+            .addTo(map)
             .bindPopup(popupContent);
         
         currentMarkers.push(marker);
     });
 
-    // ⬅️ UPDATED: This listener now handles BOTH buttons
     map.on('popupopen', function(e) {
-        const popup = e.popup._container; // Get the popup element
+        const popup = e.popup._container; 
         
-        // 1. "Write Review" button logic
         const reviewButton = popup.querySelector('.review-button');
         if (reviewButton) {
             reviewButton.onclick = function() {
@@ -229,25 +241,21 @@ function drawRestroomMarkers(restroomsToDraw) {
             };
         }
         
-        // 2. ⬅️ NEW: "View Reviews" button logic
         const viewReviewsButton = popup.querySelector('.view-reviews-button');
         if (viewReviewsButton) {
             viewReviewsButton.onclick = function() {
                 const restroomName = this.getAttribute('data-name');
-                showReviews(restroomName, popup, this); // 'this' is the button itself
+                showReviews(restroomName, popup, this);
             };
         }
     });
 }
+// ⬆️ --- END OF UPDATED FUNCTION --- ⬆️
 
-/**
- * ⬅️ NEW: This function finds and displays the reviews
- */
 function showReviews(restroomName, popup, button) {
     const container = popup.querySelector('.reviews-container');
     container.innerHTML = '<em>กำลังโหลดรีวิว...</em>';
 
-    // Filter the globally stored comments
     const matchingReviews = allComments.filter(c => c.restroomName === restroomName);
 
     if (matchingReviews.length === 0) {
@@ -266,7 +274,6 @@ function showReviews(restroomName, popup, button) {
         container.innerHTML = html;
     }
     
-    // Hide the "View Reviews" button after it's clicked
     button.style.display = 'none';
 }
 
