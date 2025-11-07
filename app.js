@@ -10,7 +10,7 @@ const googleScriptURL = 'https://script.google.com/macros/s/AKfycbyDS083V8prS-oL
 // !! IMPORTANT !! You MUST update this link.
 // 1. Go to your Google Sheet, click the "Location" tab.
 // 2. Go to File > Share > Publish to the web.
-// 3. Select "Location" and "Comma-separated values (.csv)".
+// 3. Select "Location" and "Comma-separated values (.csv)".https://script.google.com/macros/s/AKfycbyDS083V8prS-oLLfiMPwZW8t_PKiNvsRu00Mb3M_-dU6zcqB192S_1pIUIX_wtkZ3r/exec
 // 4. Click "Publish" and copy the NEW link here.
 const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?output=csv';
 // -----------------------------------------------------------------
@@ -296,3 +296,4 @@ reviewForm.addEventListener('submit', function(e) {
         reviewStatus.className = 'status-message error';
     });
 });
+
