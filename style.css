@@ -1,7 +1,7 @@
 /* --- 1. SETUP & CUSTOM FONT --- */
 :root {
-    /* สร้างตัวแปรสีหลักของเรา */
-    --brand-color: #007bff; /* สีฟ้าสดใส */
+    /* Create our main color variables */
+    --brand-color: #007bff;
     --brand-color-hover: #0056b3;
     --green-color: #198754;
     --green-color-hover: #157347;
@@ -11,40 +11,41 @@
     --card-border: 1px solid #e1e1e1;
 }
 
-/* ตั้งค่า Dark Mode */
+/* Dark Mode setup */
 [data-theme="dark"] {
     --card-background: #2b303a;
     --body-background: #1d2025;
     --card-border: 1px solid #3c424e;
 }
 
-/* ใช้ฟอนต์ Sarabun ที่เรา import มา */
+/* Use the Sarabun font */
 body, button, input, select, textarea {
     font-family: 'Sarabun', sans-serif;
 }
 
-/* --- 2. LAYOUT & CARD UI --- */
+/* --- 2. LAYOUT & CARD UI (MOBILE-FIRST) --- */
 body {
     background-color: var(--body-background);
     color: var(--pico-color);
 }
 
-/* นี่คือ "การ์ด" หลักที่ลอยอยู่ตรงกลาง */
+/* This is the main "card" for the content */
 main.container-card {
-    max-width: 800px;
-    margin: 2rem auto; /* เว้นระยะห่างด้านบนและล่าง */
-    padding: 1.5rem 2rem;
+    max-width: 800px; /* Max width for desktop */
+    width: 100%; /* Be 100% wide on mobile */
+    margin: 0 auto; /* No top/bottom margin on mobile */
+    padding: 1rem; /* Smaller padding for mobile */
     background-color: var(--card-background);
-    border-radius: var(--pico-border-radius);
-    box-shadow: var(--card-shadow);
     border: var(--card-border);
+    /* Remove shadow & border-radius on mobile for a flush look */
+    border-radius: 0;
+    box-shadow: none;
 }
 
 /* --- 3. SECTIONS (Filter & Forms) --- */
-/* เราใช้ <article> ในการจัดกลุ่ม */
 article.filter-container,
 article.form-container {
-    background-color: var(--body-background); /* ใช้สีพื้นหลังรอง */
+    background-color: var(--body-background);
     border: var(--card-border);
     padding: 1.5rem;
     border-radius: var(--pico-border-radius);
@@ -55,12 +56,12 @@ article.form-container {
     margin-top: 0;
     border-bottom: 2px solid var(--brand-color);
     padding-bottom: 10px;
-    display: inline-block; /* ทำให้ขีดเส้นใต้พอดีกับตัวอักษร */
+    display: inline-block;
 }
 
-/* --- 4. MAP & STATUS --- */
+/* --- 4. MAP & STATUS (MOBILE-FIRST) --- */
 #map {
-    height: 500px;
+    height: 350px; /* Shorter map for mobile */
     width: 100%;
     border-radius: var(--pico-border-radius);
     margin-bottom: var(--pico-spacing);
@@ -79,7 +80,6 @@ article.form-container {
 }
 
 /* --- 5. BUTTONS & FORMS --- */
-/* อัปเกรดปุ่มเพิ่มห้องน้ำ (สีหลัก) */
 #add-restroom-form button[type="submit"] {
     background-color: var(--brand-color);
     border-color: var(--brand-color);
@@ -89,7 +89,6 @@ article.form-container {
     border-color: var(--brand-color-hover);
 }
 
-/* อัปเกรดปุ่ม Filter (สีเขียว) */
 #filter-button {
     background-color: var(--green-color);
     border-color: var(--green-color);
@@ -148,8 +147,27 @@ footer {
     opacity: 0.8;
 }
 .qr-code {
-    width: 200px; /* ลดขนาด QR ให้นิดหน่อย */
+    width: 200px;
     height: 200px;
     max-width: 80%;
     border-radius: var(--pico-border-radius);
+}
+
+/* --- 9. NEW: RESPONSIVE FOR DESKTOP --- */
+/* (min-width: 768px) means "on screens 768px wide or larger" */
+@media (min-width: 768px) {
+    
+    /* On desktop, make the card float again */
+    main.container-card {
+        width: auto; /* Let it use the max-width */
+        margin: 2rem auto; /* Add top/bottom margin */
+        padding: 1.5rem 2rem; /* Add back larger padding */
+        border-radius: var(--pico-border-radius); /* Curve the corners */
+        box-shadow: var(--card-shadow); /* Add the shadow */
+    }
+
+    /* Make the map taller on desktop */
+    #map {
+        height: 500px;
+    }
 }
