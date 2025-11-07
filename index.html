@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ค้นหาห้องน้ำที่ใกล้ที่สุด</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1>ค้นหาห้องน้ำที่ใกล้ที่สุด</h1>
+    
+    <div id="map"></div>
+    
+    <p id="status">กำลังค้นหาตำแหน่งของคุณ...</p>
+
+    <div class="form-container">
+        <h2>📍 เพิ่มห้องน้ำใหม่</h2>
+        <p>ยืนอยู่ที่หน้าห้องน้ำ? เพิ่มที่นี่เลย!</p>
+        <form id="add-restroom-form">
+            <input type="text" id="new-restroom-name" placeholder="ชื่อห้องน้ำ (เช่น PTT...)" required>
+            <button type="submit">เพิ่มที่ตำแหน่งปัจจุบันของฉัน</button>
+            <p id="add-status" class="status-message"></p>
+        </form>
+    </div>
+
+
+    <hr>
+    <div class="donation-section">
+        <h3>สนับสนุนค่ากาแฟ ☕</h3>
+        <p>แอปนี้ใช้งานได้ฟรี หากคุณต้องการสนับสนุนผู้พัฒนา:</p>
+        <img src="donate.jpg" alt="สแกนเพื่อบริจาค (PromptPay)" class="qr-code">
+    </div>
+
+
+    <div id="review-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            
+            <h2 id="review-title">เขียนรีวิวสำหรับ...</h2>
+            <form id="review-form">
+                <input type="hidden" id="review-restroom-name">
+                
+                <label for="review-stars">คะแนน (1-5 ดาว):</label>
+                <select id="review-stars" required>
+                    <option value="5">⭐⭐⭐⭐⭐</option>
+                    <option value="4">⭐⭐⭐⭐</option>
+                    <option value="3">⭐⭐⭐</option>
+                    <option value="2">⭐⭐</option>
+                    <option value="1">⭐</option>
+                </select>
+                
+                <label for="review-comment">ความคิดเห็น:</label>
+                <textarea id="review-comment" rows="4" placeholder="ห้องน้ำสะอาดมาก..."></textarea>
+                
+                <button type="submit">ส่งรีวิว</button>
+                <p id="review-status" class="status-message"></p>
+            </form>
+        </div>
+    </div>
+
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script src="app.js"></script>
+</body>
+</html>
