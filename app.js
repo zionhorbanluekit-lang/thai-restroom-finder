@@ -230,4 +230,63 @@ addRestroomForm.addEventListener('submit', function(e) {
         }
     })
     .catch(error => {
-        addStatus.innerText = 'เกิดข้อ
+        addStatus.innerText = 'เกิดข้อผิดพลาด: ' + error.message;
+        addStatus.className = 'status-message error';
+    });
+});
+
+
+// --- "Review Modal" Logic ---
+function openReviewModal(restroomName) {
+    reviewTitle.innerText = `เขียนรีวิวสำหรับ "${restroomName}"`;
+    reviewRestroomNameInput.value = restroomName; // Set hidden input
+    reviewModal.style.display = 'block'; // Show the modal
+    reviewStatus.innerText = '';
+    reviewForm.reset(); // Clear old values
+}
+
+closeModalButton.onclick = function() {
+    reviewModal.style.display = 'none'; // Hide the modal
+}
+window.onclick = function(event) {
+    if (event.target == reviewModal) {
+        reviewModal.style.display = 'none'; // Hide if user clicks outside
+    }
+}
+
+reviewForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    reviewStatus.innerText = 'กำลังส่งรีวิว...';
+    reviewStatus.className = 'status-message';
+
+    const data = {
+        type: 'new_comment',
+        restroomName: reviewRestroomNameInput.value,
+        stars: reviewStarsInput.value,
+        comment: reviewCommentInput.value
+    };
+
+    // Send the data to our '/api/gas-proxy'
+    fetch(googleScriptURL, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(response => {
+        if (response.status === 'success') {
+            reviewStatus.innerText = 'ส่งรีวิวสำเร็จแล้ว!';
+            reviewStatus.className = 'status-message success';
+            // Close modal after 1.5 seconds
+            setTimeout(() => {
+                reviewModal.style.display = 'none';
+            }, 1500);
+        } else {
+            throw new Error(response.message);
+        }
+    })
+    .catch(error => {
+        reviewStatus.innerText = 'เกิดข้อผิดพลาด: ' + error.message;
+        reviewStatus.className = 'status-message error';
+    });
+});
