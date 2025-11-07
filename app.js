@@ -8,95 +8,75 @@ const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsed
 //  --- GLOBAL VARIABLES ---
 // =======================================================
 let map = null;
-let userLocation = null;
-let allRestrooms = []; // We will store all restrooms here for filtering
-let currentMarkers = []; // Store the markers that are currently on the map
+let userLocation = null; // เรายังคงเก็บตำแหน่งแรกไว้สำหรับจุดศูนย์กลางแผนที่
+let allRestrooms = []; 
+let currentMarkers = []; 
 
 // =======================================================
 //  --- GET HTML ELEMENTS ---
 // =======================================================
 const statusElement = document.getElementById('status');
-
-// --- Review Modal Elements (UPDATED for <dialog>) ---
 const reviewModal = document.getElementById('review-modal');
 const reviewForm = document.getElementById('review-form');
 const reviewTitle = document.getElementById('review-title');
 const reviewRestroomNameInput = document.getElementById('review-restroom-name');
 const reviewStarsInput = document.getElementById('review-stars');
 const reviewCommentInput = document.getElementById('review-comment');
-const reviewerNameInput = document.getElementById('reviewer-name'); // New field
+const reviewerNameInput = document.getElementById('reviewer-name');
 const reviewStatus = document.getElementById('review-status');
 const closeModalButton = document.querySelector('.close-modal');
-
-// --- Add Restroom Form Elements ---
 const addRestroomForm = document.getElementById('add-restroom-form');
 const newRestroomNameInput = document.getElementById('new-restroom-name');
-const newPaperCheckbox = document.getElementById('new-paper'); // New field
-const newSprayCheckbox = document.getElementById('new-spray'); // New field
-const newConditionSelect = document.getElementById('new-condition'); // New field
+const newPaperCheckbox = document.getElementById('new-paper');
+const newSprayCheckbox = document.getElementById('new-spray');
+const newConditionSelect = document.getElementById('new-condition');
 const addStatus = document.getElementById('add-status');
-
-// --- Filter Elements ---
 const filterButton = document.getElementById('filter-button');
 const filterPaper = document.getElementById('filter-paper');
 const filterSpray = document.getElementById('filter-spray');
 const filterCondition = document.getElementById('filter-condition');
 
-
 // =======================================================
 //  --- INITIALIZATION ---
 // =======================================================
-// Ask for the user's location
 navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError);
-
-// Add listener for the new filter button
 filterButton.addEventListener('click', applyFilters);
 
-// === NEW MODAL CLOSE LOGIC (for <dialog>) ===
 closeModalButton.addEventListener('click', () => {
     reviewModal.close();
 });
 reviewModal.addEventListener('click', (e) => {
-    // Close if user clicks on the backdrop
     if (e.target === reviewModal) {
         reviewModal.close();
     }
 });
-// =======================================================
-
 
 // =======================================================
 //  --- MAIN MAP & DATA LOGIC ---
 // =======================================================
 
 async function onLocationSuccess(position) {
-    userLocation = {
+    userLocation = { // บันทึกตำแหน่ง *แรก* ไว้สำหรับจุดศูนย์กลางแผนที่
         lat: position.coords.latitude,
         lon: position.coords.longitude
     };
     statusElement.innerText = "กำลังโหลดแผนที่...";
     
-    // Load the basic map centered on the user
     loadMap(userLocation.lat, userLocation.lon);
 
     statusElement.innerText = "กำลังดึงข้อมูลห้องน้ำ...";
     try {
-        // Fetch the data from the published Google Sheet CSV
+        // (ส่วนนี้เหมือนเดิม... ดึงข้อมูล CSV)
         const response = await fetch(googleSheetURL + '&t=' + new Date().getTime());
         if (!response.ok) throw new Error('Network response was not ok');
-
         const csvText = await response.text();
-        allRestrooms = parseCSV(csvText); // Store restrooms in global variable
-
+        allRestrooms = parseCSV(csvText);
         if (allRestrooms.length === 0) {
              statusElement.innerText = 'ไม่พบข้อมูลห้องน้ำใน Google Sheet';
              return;
         }
-
-        // Draw all restrooms on the map for the first time
         drawRestroomMarkers(allRestrooms);
         statusElement.innerText = `พบห้องน้ำ ${allRestrooms.length} แห่ง.`;
-
     } catch (error) {
         console.error('Error fetching or parsing sheet:', error);
         statusElement.innerText = 'เกิดข้อผิดพลาดในการโหลดแผนที่';
@@ -108,64 +88,50 @@ function onLocationError(error) {
     statusElement.innerText = 'ไม่สามารถรับตำแหน่งของคุณได้ โปรดอนุญาตให้แชร์ตำแหน่ง';
 }
 
-/**
- * Loads the basic map and user's location marker
- */
 function loadMap(userLat, userLon) {
     map = L.map('map').setView([userLat, userLon], 15);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap'
     }).addTo(map);
-
-    // Add a marker for the user
     L.marker([userLat, userLon]).addTo(map)
         .bindPopup('<b>ตำแหน่งของคุณ</b>')
         .openPopup();
 }
 
-/**
- * Parses the CSV text from Google Sheets with new columns
- */
 function parseCSV(csvText) {
     const lines = csvText.trim().split('\n');
-    const dataLines = lines.slice(1); // Remove header
+    const dataLines = lines.slice(1);
     return dataLines.map(line => {
         const values = line.split(',');
-        if (values.length >= 6) { // Now expecting 6 columns
+        if (values.length >= 6) {
             return {
                 name: values[0].trim(),
                 lat: parseFloat(values[1]),
                 lon: parseFloat(values[2]),
-                hasPaper: values[3].trim(), // New field
-                hasSpray: values[4].trim(), // New field
-                condition: values[5].trim() // New field
+                hasPaper: values[3].trim(),
+                hasSpray: values[4].trim(),
+                condition: values[5].trim()
             };
         }
         return null;
     }).filter(restroom => restroom !== null && !isNaN(restroom.lat) && !isNaN(restroom.lon));
 }
 
-/**
- * Calculates distance between two GPS coordinates
- */
 function getDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Radius of the Earth in km
+    const R = 6371;
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
               Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // Distance in km
+    return R * c;
 }
 
 // =======================================================
 //  --- FILTERING LOGIC ---
 // =======================================================
 
-/**
- * Clears all restroom markers from the map
- */
 function clearAllMarkers() {
     currentMarkers.forEach(marker => {
         map.removeLayer(marker);
@@ -173,12 +139,8 @@ function clearAllMarkers() {
     currentMarkers = [];
 }
 
-/**
- * Draws a specific set of restrooms on the map
- */
 function drawRestroomMarkers(restroomsToDraw) {
     restroomsToDraw.forEach(restroom => {
-        // Create popup content with new details
         const popupContent = `
             <b>${restroom.name}</b><br>
             <small>
@@ -188,14 +150,10 @@ function drawRestroomMarkers(restroomsToDraw) {
             </small><br>
             <button class="review-button" data-name="${restroom.name}">เขียนรีวิว</button>
         `;
-        
         const marker = L.marker([restroom.lat, restroom.lon]).addTo(map)
             .bindPopup(popupContent);
-        
-        currentMarkers.push(marker); // Store marker to be able to remove it
+        currentMarkers.push(marker);
     });
-
-    // Add listener for review buttons (must be re-added)
     map.on('popupopen', function(e) {
         const reviewButton = e.popup._container.querySelector('.review-button');
         if (reviewButton) {
@@ -207,117 +165,117 @@ function drawRestroomMarkers(restroomsToDraw) {
     });
 }
 
-/**
- * Main filter function
- */
 function applyFilters() {
-    // 1. Get filter values
     const wantPaper = filterPaper.checked;
     const wantSpray = filterSpray.checked;
     const wantCondition = filterCondition.value;
-
     statusElement.innerText = 'กำลังฟิลเตอร์...';
-
-    // 2. Filter the global 'allRestrooms' array
     const filteredRestrooms = allRestrooms.filter(restroom => {
-        // Check paper
-        if (wantPaper && restroom.hasPaper !== 'Yes') {
-            return false;
-        }
-        // Check spray
-        if (wantSpray && restroom.hasSpray !== 'Yes') {
-            return false;
-        }
-        // Check condition
-        if (wantCondition !== 'any' && restroom.condition !== wantCondition) {
-            return false;
-        }
-        // If it passes all checks, keep it
+        if (wantPaper && restroom.hasPaper !== 'Yes') return false;
+        if (wantSpray && restroom.hasSpray !== 'Yes') return false;
+        if (wantCondition !== 'any' && restroom.condition !== wantCondition) return false;
         return true;
     });
-
-    // 3. Clear old markers
     clearAllMarkers();
-
-    // 4. Draw new, filtered markers
     drawRestroomMarkers(filteredRestrooms);
     statusElement.innerText = `แสดงผล ${filteredRestrooms.length} จาก ${allRestrooms.length} แห่ง`;
 }
-
 
 // =======================================================
 //  --- FORM SUBMISSION LOGIC (UPDATED) ---
 // =======================================================
 
 // --- "Add New Restroom" Form ---
+// ⬇️⬇️ นี่คือส่วนที่แก้ไข ⬇️⬇️
 addRestroomForm.addEventListener('submit', function(e) {
     e.preventDefault();
-    if (!userLocation) {
-        addStatus.innerText = 'ไม่สามารถรับตำแหน่งของคุณได้';
+    
+    // ดึงข้อมูลจากฟอร์มมาก่อน
+    const name = newRestroomNameInput.value;
+    const hasPaper = newPaperCheckbox.checked ? 'Yes' : 'No';
+    const hasSpray = newSprayCheckbox.checked ? 'Yes' : 'No';
+    const condition = newConditionSelect.value;
+    
+    if (!name) {
+        addStatus.innerText = 'กรุณาใส่ชื่อห้องน้ำ';
         addStatus.className = 'status-message error';
         return;
     }
-    addStatus.innerText = 'กำลังเพิ่ม...';
+    
+    addStatus.innerText = 'กำลังค้นหาตำแหน่งปัจจุบันของคุณ...';
     addStatus.className = 'status-message';
 
-    // Get new form values
-    const data = {
-        type: 'new_restroom',
-        name: newRestroomNameInput.value,
-        lat: userLocation.lat,
-        lon: userLocation.lon,
-        hasPaper: newPaperCheckbox.checked ? 'Yes' : 'No', // New
-        hasSpray: newSprayCheckbox.checked ? 'Yes' : 'No', // New
-        condition: newConditionSelect.value // New
-    };
+    // 1. ขอตำแหน่ง GPS ใหม่เดี๋ยวนี้
+    navigator.geolocation.getCurrentPosition(
+        function(position) { // (A) ถ้าขอตำแหน่งสำเร็จ
+            
+            // 2. เอาตำแหน่งใหม่ (fresh location) มาใช้
+            const freshLat = position.coords.latitude;
+            const freshLon = position.coords.longitude;
 
-    // Send data to the Vercel proxy
-    fetch(googleScriptURL, {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' }
-    })
-    .then(res => res.json())
-    .then(response => {
-        if (response.status === 'success') {
-            addStatus.innerText = 'เพิ่มห้องน้ำสำเร็จแล้ว! (ข้อมูลจะอัปเดตในรอบถัดไป)';
-            addStatus.className = 'status-message success';
-            addRestroomForm.reset();
-        } else {
-            throw new Error(response.message);
+            addStatus.innerText = 'กำลังเพิ่ม...';
+
+            const data = {
+                type: 'new_restroom',
+                name: name,
+                lat: freshLat, // <-- ใช้ตำแหน่งใหม่
+                lon: freshLon, // <-- ใช้ตำแหน่งใหม่
+                hasPaper: hasPaper,
+                hasSpray: hasSpray,
+                condition: condition
+            };
+
+            // 3. ส่งข้อมูลไปที่ Vercel Proxy (เหมือนเดิม)
+            fetch(googleScriptURL, {
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(response => {
+                if (response.status === 'success') {
+                    addStatus.innerText = 'เพิ่มห้องน้ำสำเร็จแล้ว!';
+                    addStatus.className = 'status-message success';
+                    addRestroomForm.reset();
+                } else {
+                    throw new Error(response.message);
+                }
+            })
+            .catch(error => {
+                addStatus.innerText = 'เกิดข้อผิดพลาด (Fetch): ' + error.message;
+                addStatus.className = 'status-message error';
+            });
+
+        }, 
+        function(error) { // (B) ถ้าขอตำแหน่งไม่สำเร็จ
+            console.error('Error getting fresh location:', error);
+            addStatus.innerText = 'เกิดข้อผิดพลาด: ไม่สามารถรับตำแหน่งปัจจุบันของคุณได้';
+            addStatus.className = 'status-message error';
         }
-    })
-    .catch(error => {
-        addStatus.innerText = 'เกิดข้อผิดพลาด: ' + error.message;
-        addStatus.className = 'status-message error';
-    });
+    );
 });
 
 
-// --- "Review Modal" Logic (UPDATED for <dialog>) ---
+// --- "Review Modal" Logic (เหมือนเดิม) ---
 function openReviewModal(restroomName) {
     reviewTitle.innerText = `เขียนรีวิวสำหรับ "${restroomName}"`;
     reviewRestroomNameInput.value = restroomName;
     reviewStatus.innerText = '';
     reviewForm.reset();
-    reviewModal.showModal(); // <-- NEW WAY TO OPEN
+    reviewModal.showModal();
 }
 
 reviewForm.addEventListener('submit', function(e) {
     e.preventDefault();
     reviewStatus.innerText = 'กำลังส่งรีวิว...';
     reviewStatus.className = 'status-message';
-
-    // Get new form value
     const data = {
         type: 'new_comment',
         restroomName: reviewRestroomNameInput.value,
         stars: reviewStarsInput.value,
         comment: reviewCommentInput.value,
-        reviewerName: reviewerNameInput.value // New
+        reviewerName: reviewerNameInput.value
     };
-
-    // Send data to the Vercel proxy
     fetch(googleScriptURL, {
         method: 'POST',
         body: JSON.stringify(data),
@@ -329,7 +287,7 @@ reviewForm.addEventListener('submit', function(e) {
             reviewStatus.innerText = 'ส่งรีวิวสำเร็จแล้ว!';
             reviewStatus.className = 'status-message success';
             setTimeout(() => {
-                reviewModal.close(); // <-- NEW WAY TO CLOSE
+                reviewModal.close();
             }, 1500);
         } else {
             throw new Error(response.message);
