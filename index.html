@@ -1,10 +1,14 @@
 <!DOCTYPE html>
-<html lang="th" data-theme="auto"> 
+<html lang="th" data-theme="auto">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ค้นหาห้องน้ำที่ใกล้ที่สุด</title>
     
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -13,15 +17,14 @@
 </head>
 <body>
 
-    <main class="container">
+    <main class="container-card">
 
         <hgroup>
             <h1>ค้นหาห้องน้ำที่ใกล้ที่สุด</h1>
             <p id="status">กำลังค้นหาตำแหน่งของคุณ...</p>
         </hgroup>
         
-        <section class="filter-container">
-            <h3>ตัวกรอง (Filter)</h3>
+        <article class="filter-container"> <h3 class="section-title">ตัวกรอง (Filter)</h3>
             <div class="filter-options grid">
                 <label>
                     <input type="checkbox" id="filter-paper"> มีทิชชู่
@@ -37,12 +40,11 @@
                 </select>
             </div>
             <button id="filter-button" class="contrast">ค้นหา</button>
-        </section>
+        </article>
 
         <div id="map"></div>
 
-        <section class="form-container">
-            <h2>📍 เพิ่มห้องน้ำใหม่</h2>
+        <article class="form-container"> <h2 class="section-title">📍 เพิ่มห้องน้ำใหม่</h2>
             <p>ยืนอยู่ที่หน้าห้องน้ำ? เพิ่มที่นี่เลย!</p>
             <form id="add-restroom-form">
                 <input type="text" id="new-restroom-name" placeholder="ชื่อห้องน้ำ (เช่น PTT...)" required>
@@ -68,7 +70,7 @@
                 <button type="submit">เพิ่มที่ตำแหน่งปัจจุบันของฉัน</button>
                 <p id="add-status" class="status-message"></p>
             </form>
-        </section>
+        </article>
 
 
         <footer>
@@ -108,7 +110,6 @@
             </form>
         </article>
     </dialog>
-
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="app.js"></script>
