@@ -16,18 +16,18 @@
 
     <main class="container-card">
 
+        <button id="theme-switcher" class="secondary outline" aria-label="Switch theme"></button>
+
         <hgroup>
             <h1>ห้องน้ำใกล้ฉัน</h1>
             <p id="status">กำลังค้นหาตำแหน่งของคุณ...</p>
         </hgroup>
         
         <article class="filter-container" id="filter-section"> 
-            
             <header class="filter-toggle-header" id="filter-toggle-button">
                 <h3 class="section-title">ตัวกรอง (Filter)</h3>
                 <span class="toggle-icon">▼</span>
             </header>
-
             <div class="filter-content">
                 <div class="filter-options grid">
                     <label>
@@ -42,14 +42,13 @@
                         <option value="Well">ดี</option>
                         <option value="Bad">แย่</option>
                     </select>
-                    
                     <select id="filter-crowd">
                         <option value="any">ความหนาแน่น (ทั้งหมด)</option>
                         <option value="Not Crowded">ไม่แออัด</option>
                         <option value="Normal">ปกติ</option>
                         <option value="Very Crowded">แออัดมาก</option>
                     </select>
-                    </div>
+                </div>
                 <button id="filter-button" class="contrast">ค้นหา</button>
             </div>
         </article>
@@ -87,6 +86,7 @@
                     <option value="Normal">ปกติ (Normal)</option>
                     <option value="Very Crowded">แออัดมาก (Very Crowded)</option>
                 </select>
+                
                 <button type="submit">เพิ่มที่ตำแหน่งปัจจุบันของฉัน</button>
                 <p id="add-status" class="status-message"></p>
             </form>
@@ -96,7 +96,7 @@
             <hr>
             <h3>สนับสนุนค่ากาแฟ ☕</h3>
             <p>แอปนี้ใช้งานได้ฟรี หากคุณต้องการสนับสนุนผู้พัฒนา:</p>
-            <img src="donate.jpg" alt="สแกนเพื่อบริจาค (PromptPay)" class="qr-code">
+            <img src="donate.jpg" alt="สแกนเพื่อบริอาค (PromptPay)" class="qr-code">
             <p><small>Contact Developer: <a href="mailto:zionhorbanluekit@gmail.com">zionhorbanluekit@gmail.com</a></small></p>
         </footer>
 
