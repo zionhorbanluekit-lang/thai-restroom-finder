@@ -22,13 +22,9 @@ const restroomIcon = L.icon({
 });
 
 // =======================================================
-// ⬇️ NEW: Run all setup code *after* the HTML page loads ⬇️
+// ⬇️ UPDATED: GET HTML ELEMENTS ⬇️
 // =======================================================
 document.addEventListener('DOMContentLoaded', () => {
-
-    // =======================================================
-    //  --- GET HTML ELEMENTS ---
-    // =======================================================
     const statusElement = document.getElementById('status');
     const reviewModal = document.getElementById('review-modal');
     const reviewForm = document.getElementById('review-form');
@@ -54,9 +50,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterToggleButton = document.getElementById('filter-toggle-button');
     const filterSection = document.getElementById('filter-section');
     const themeSwitcher = document.getElementById('theme-switcher');
+    
+    // --- (1) NEW: Get Distance Filter Elements ---
+    const filterDistance = document.getElementById('filter-distance');
+    const distanceValue = document.getElementById('distance-value');
+    // --- END NEW ---
 
     // =======================================================
-    //  --- INITIALIZATION ---
+    // ⬇️ UPDATED: INITIALIZATION ⬇️
     // =======================================================
     navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError);
     filterButton.addEventListener('click', applyFilters);
@@ -74,34 +75,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Theme Switcher Logic (now safely inside the listener)
     themeSwitcher.addEventListener('click', () => {
         const html = document.documentElement;
         const currentTheme = html.getAttribute('data-theme');
-        
         if (currentTheme !== 'light') {
             html.setAttribute('data-theme', 'light');
-            themeSwitcher.innerText = '🌙'; // Show icon to switch to Dark
+            themeSwitcher.innerText = '🌙';
         } else {
             html.setAttribute('data-theme', 'dark');
-            themeSwitcher.innerText = '☀️'; // Show icon to switch to Light
+            themeSwitcher.innerText = '☀️';
         }
     });
 
-    // Set the initial icon for the theme button
     const resolvedTheme = getComputedStyle(document.documentElement).getPropertyValue('color-scheme');
     if (resolvedTheme === 'dark') {
-        themeSwitcher.innerText = '☀️'; // Currently dark, show sun
+        themeSwitcher.innerText = '☀️';
     } else {
-        themeSwitcher.innerText = '🌙'; // Currently light, show moon
+        themeSwitcher.innerText = '🌙';
     }
+    
+    // --- (2) NEW: Add listener for the distance slider ---
+    // This updates the "X km" text as the user slides
+    filterDistance.addEventListener('input', () => {
+        distanceValue.innerText = filterDistance.value;
+    });
+    // --- END NEW ---
     
     // Attach listeners to forms
     addRestroomForm.addEventListener('submit', handleAddRestroom);
     reviewForm.addEventListener('submit', handleReviewSubmit);
 });
 // =======================================================
-// ⬆️ End of the new DOMContentLoaded wrapper ⬆️
+// ⬆️ End of the DOMContentLoaded wrapper ⬆️
 // =======================================================
 
 
@@ -114,14 +119,12 @@ async function onLocationSuccess(position) {
         lat: position.coords.latitude,
         lon: position.coords.longitude
     };
-    // We must get the statusElement again *inside* the function
     const statusElement = document.getElementById('status');
     statusElement.innerText = "กำลังโหลดแผนที่...";
     loadMap(userLocation.lat, userLocation.lon);
 
     statusElement.innerText = "กำลังดึงข้อมูลห้องน้ำ...";
     try {
-        // (1) Fetch Locations
         const response = await fetch(locationSheetURL + '&t=' + new Date().getTime());
         if (!response.ok) throw new Error(`Location Sheet Error: ${response.status} ${response.statusText}`);
         const csvText = await response.text();
@@ -131,15 +134,14 @@ async function onLocationSuccess(position) {
              statusElement.innerText = 'ไม่พบข้อมูลห้องน้ำใน Google Sheet';
         }
 
-        // (2) Fetch all Comments
-        statusElement.innerText = `พบ ${allRestrooms.length} ห้องน้ำ. กำลังโหลดรีวิว...`;
         const commentResponse = await fetch(commentSheetURL + '&t=' + new Date().getTime());
         if (!commentResponse.ok) throw new Error(`Comment Sheet Error: ${commentResponse.status} ${commentResponse.statusText}`);
         const commentCsvText = await commentResponse.text();
         allComments = parseCommentCSV(commentCsvText);
 
-        // (3) Draw markers
-        drawRestroomMarkers(allRestrooms);
+        // Draw markers for the *first time* (no filters applied yet)
+        // We'll apply the default distance filter here
+        applyFilters(); 
         statusElement.innerText = `พบ ${allRestrooms.length} ห้องน้ำ และ ${allComments.length} รีวิว.`;
 
     } catch (error) {
@@ -340,13 +342,20 @@ function showReviews(restroomName, popup, button) {
     button.style.display = 'none';
 }
 
+// =======================================================
+// ⬇️ UPDATED: applyFilters ⬇️
+// =======================================================
 function applyFilters() {
-    // Get elements again inside the function (safer)
     const filterPaper = document.getElementById('filter-paper');
     const filterSpray = document.getElementById('filter-spray');
     const filterCondition = document.getElementById('filter-condition');
     const filterCrowd = document.getElementById('filter-crowd');
     const statusElement = document.getElementById('status');
+    
+    // --- (3) NEW: Get the max distance from the slider ---
+    const filterDistance = document.getElementById('filter-distance');
+    const maxDistance = parseFloat(filterDistance.value);
+    // --- END NEW ---
 
     const wantPaper = filterPaper.checked;
     const wantSpray = filterSpray.checked;
@@ -356,6 +365,15 @@ function applyFilters() {
     statusElement.innerText = 'กำลังฟิลเตอร์...';
     
     const filteredRestrooms = allRestrooms.filter(restroom => {
+        // --- (4) NEW: Add distance check ---
+        // First, check the distance. This is the fastest filter.
+        const distance = getDistance(userLocation.lat, userLocation.lon, restroom.lat, restroom.lon);
+        if (distance > maxDistance) {
+            return false;
+        }
+        // --- END NEW ---
+
+        // Then, check the other filters
         if (wantPaper && restroom.hasPaper !== 'Yes') return false;
         if (wantSpray && restroom.hasSpray !== 'Yes') return false;
         if (wantCondition !== 'any' && restroom.condition !== wantCondition) return false;
@@ -365,14 +383,16 @@ function applyFilters() {
     
     clearAllMarkers();
     drawRestroomMarkers(filteredRestrooms);
-    statusElement.innerText = `แสดงผล ${filteredRestrooms.length} จาก ${allRestrooms.length} แห่ง`;
+    statusElement.innerText = `แสดงผล ${filteredRestrooms.length} จาก ${allRestrooms.length} แห่ง (ในระยะ ${maxDistance} กม.)`;
 }
+// ⬆️ END OF UPDATED FUNCTION ⬆️
 
-// --- "Add New Restroom" Form Handler ---
+// =======================================================
+//  --- FORM SUBMISSION LOGIC ---
+// =======================================================
+
 function handleAddRestroom(e) {
     e.preventDefault();
-    
-    // Get elements again inside the function
     const newRestroomNameInput = document.getElementById('new-restroom-name');
     const newPaperCheckbox = document.getElementById('new-paper');
     const newSprayCheckbox = document.getElementById('new-spray');
@@ -443,7 +463,6 @@ function handleAddRestroom(e) {
     );
 }
 
-// --- "Review Modal" Logic ---
 function openReviewModal(restroomName) {
     const reviewModal = document.getElementById('review-modal');
     const reviewTitle = document.getElementById('review-title');
@@ -460,8 +479,6 @@ function openReviewModal(restroomName) {
 
 function handleReviewSubmit(e) {
     e.preventDefault();
-    
-    // Get elements again inside the function
     const reviewStatus = document.getElementById('review-status');
     const reviewRestroomNameInput = document.getElementById('review-restroom-name');
     const reviewStarsInput = document.getElementById('review-stars');
@@ -502,3 +519,4 @@ function handleReviewSubmit(e) {
         reviewStatus.className = 'status-message error';
     });
 }
+
