@@ -38,13 +38,13 @@ const newRestroomNameInput = document.getElementById('new-restroom-name');
 const newPaperCheckbox = document.getElementById('new-paper');
 const newSprayCheckbox = document.getElementById('new-spray');
 const newConditionSelect = document.getElementById('new-condition');
-const newCrowdSelect = document.getElementById('new-crowd'); // <-- NEW
+const newCrowdSelect = document.getElementById('new-crowd');
 const addStatus = document.getElementById('add-status');
 const filterButton = document.getElementById('filter-button');
 const filterPaper = document.getElementById('filter-paper');
 const filterSpray = document.getElementById('filter-spray');
 const filterCondition = document.getElementById('filter-condition');
-const filterCrowd = document.getElementById('filter-crowd'); // <-- NEW
+const filterCrowd = document.getElementById('filter-crowd');
 const filterToggleButton = document.getElementById('filter-toggle-button');
 const filterSection = document.getElementById('filter-section');
 
@@ -129,15 +129,12 @@ function loadMap(userLat, userLon) {
         .openPopup();
 }
 
-/**
- * ⬅️ UPDATED: Now expects 7 columns
- */
 function parseLocationCSV(csvText) {
     const lines = csvText.trim().split('\n');
     const dataLines = lines.slice(1);
     return dataLines.map(line => {
         const values = line.split(',');
-        if (values.length >= 7) { // <-- CHANGED from 6 to 7
+        if (values.length >= 7) {
             return {
                 name: values[0].trim(),
                 lat: parseFloat(values[1]),
@@ -145,7 +142,7 @@ function parseLocationCSV(csvText) {
                 hasPaper: values[3].trim(),
                 hasSpray: values[4].trim(),
                 condition: values[5].trim(),
-                crowdLevel: values[6].trim() // <-- NEW
+                crowdLevel: values[6].trim()
             };
         }
         return null;
@@ -190,6 +187,31 @@ function formatDistance(km) {
     }
 }
 
+// ⬇️ --- (1) NEW BILINGUAL TRANSLATION FUNCTION --- ⬇️
+/**
+ * Translates the saved English values back to bilingual text
+ */
+function translateSpec(value) {
+    const translations = {
+        // Condition
+        "Excellent": "ยอดเยี่ยม (Excellent)",
+        "Well": "ดี (Well)",
+        "Bad": "แย่ (Bad)",
+        // Crowd
+        "Not Crowded": "ไม่แออัด (Not Crowded)",
+        "Normal": "ปกติ (Normal)",
+        "Very Crowded": "แออัดมาก (Very Crowded)",
+        // Yes/No
+        "Yes": "มี (Yes)",
+        "No": "ไม่มี (No)",
+        // Default
+        "N/A": "N/A"
+    };
+    // Return the translation, or the original value if not found
+    return translations[value] || value;
+}
+// ⬆️ --- END OF NEW FUNCTION --- ⬆️
+
 // =======================================================
 //  --- FILTERING & DRAWING LOGIC ---
 // =======================================================
@@ -202,13 +224,14 @@ function clearAllMarkers() {
 }
 
 /**
- * ⬅️ UPDATED: Added CrowdLevel to popup
+ * ⬅️ UPDATED: This function now uses translateSpec()
  */
 function drawRestroomMarkers(restroomsToDraw) {
     restroomsToDraw.forEach(restroom => {
         const distance = getDistance(userLocation.lat, userLocation.lon, restroom.lat, restroom.lon);
         const distanceStr = formatDistance(distance);
         
+        // Calculate Average Score
         const matchingReviews = allComments.filter(c => c.restroomName === restroom.name);
         let scoreHtml = '<em>ยังไม่มีรีวิว</em>';
         
@@ -226,14 +249,23 @@ function drawRestroomMarkers(restroomsToDraw) {
             `;
         }
 
+        // --- (2) NEW: Translate specs to bilingual ---
+        const conditionStr = translateSpec(restroom.condition || 'N/A');
+        const crowdStr = translateSpec(restroom.crowdLevel || 'N/A');
+        const paperStr = translateSpec(restroom.hasPaper || 'N/A');
+        const sprayStr = translateSpec(restroom.hasSpray || 'N/A');
+        // --- END OF NEW ---
+
+        // --- (3) NEW: Updated popup content ---
         const popupContent = `
             <b>${restroom.name}</b><br>
             ${scoreHtml}
             <big>📍 ${distanceStr} จากตำแหน่งของคุณ</big><br>
             <small>
-                <b>สภาพ:</b> ${restroom.condition || 'N/A'}<br>
-                <b>ความหนาแน่น:</b> ${restroom.crowdLevel || 'N/A'}<br> <b>ทิชชู่:</b> ${restroom.hasPaper || 'N/A'}<br>
-                <b>สายฉีด:</b> ${restroom.hasSpray || 'N/A'}
+                <b>สภาพ (Condition):</b> ${conditionStr}<br>
+                <b>ความหนาแน่น (Crowd):</b> ${crowdStr}<br>
+                <b>ทิชชู่ (Paper):</b> ${paperStr}<br>
+                <b>สายฉีด (Spray):</b> ${sprayStr}
             </small><br>
             <button class="review-button" data-name="${restroom.name}">เขียนรีวิว</button>
             <button class="view-reviews-button" data-name="${restroom.name}">ดูรีวิวทั้งหมด</button>
@@ -418,3 +450,4 @@ reviewForm.addEventListener('submit', function(e) {
         reviewStatus.className = 'status-message error';
     });
 });
+
