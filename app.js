@@ -38,11 +38,13 @@ const newRestroomNameInput = document.getElementById('new-restroom-name');
 const newPaperCheckbox = document.getElementById('new-paper');
 const newSprayCheckbox = document.getElementById('new-spray');
 const newConditionSelect = document.getElementById('new-condition');
+const newCrowdSelect = document.getElementById('new-crowd'); // <-- NEW
 const addStatus = document.getElementById('add-status');
 const filterButton = document.getElementById('filter-button');
 const filterPaper = document.getElementById('filter-paper');
 const filterSpray = document.getElementById('filter-spray');
 const filterCondition = document.getElementById('filter-condition');
+const filterCrowd = document.getElementById('filter-crowd'); // <-- NEW
 const filterToggleButton = document.getElementById('filter-toggle-button');
 const filterSection = document.getElementById('filter-section');
 
@@ -52,14 +54,10 @@ const filterSection = document.getElementById('filter-section');
 navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError);
 filterButton.addEventListener('click', applyFilters);
 
-// ⬇️ UPDATED: Filter toggle logic is simpler ⬇️
 filterToggleButton.addEventListener('click', () => {
-    // Just toggle the class. CSS handles the animation and icon rotation.
     filterSection.classList.toggle('is-visible');
 });
-// ⬆️ END OF UPDATE ⬆️
 
-// Logic for closing the review modal
 closeModalButton.addEventListener('click', () => {
     reviewModal.close();
 });
@@ -131,19 +129,23 @@ function loadMap(userLat, userLon) {
         .openPopup();
 }
 
+/**
+ * ⬅️ UPDATED: Now expects 7 columns
+ */
 function parseLocationCSV(csvText) {
     const lines = csvText.trim().split('\n');
     const dataLines = lines.slice(1);
     return dataLines.map(line => {
         const values = line.split(',');
-        if (values.length >= 6) {
+        if (values.length >= 7) { // <-- CHANGED from 6 to 7
             return {
                 name: values[0].trim(),
                 lat: parseFloat(values[1]),
                 lon: parseFloat(values[2]),
                 hasPaper: values[3].trim(),
                 hasSpray: values[4].trim(),
-                condition: values[5].trim()
+                condition: values[5].trim(),
+                crowdLevel: values[6].trim() // <-- NEW
             };
         }
         return null;
@@ -199,6 +201,9 @@ function clearAllMarkers() {
     currentMarkers = [];
 }
 
+/**
+ * ⬅️ UPDATED: Added CrowdLevel to popup
+ */
 function drawRestroomMarkers(restroomsToDraw) {
     restroomsToDraw.forEach(restroom => {
         const distance = getDistance(userLocation.lat, userLocation.lon, restroom.lat, restroom.lon);
@@ -227,7 +232,7 @@ function drawRestroomMarkers(restroomsToDraw) {
             <big>📍 ${distanceStr} จากตำแหน่งของคุณ</big><br>
             <small>
                 <b>สภาพ:</b> ${restroom.condition || 'N/A'}<br>
-                <b>ทิชชู่:</b> ${restroom.hasPaper || 'N/A'}<br>
+                <b>ความหนาแน่น:</b> ${restroom.crowdLevel || 'N/A'}<br> <b>ทิชชู่:</b> ${restroom.hasPaper || 'N/A'}<br>
                 <b>สายฉีด:</b> ${restroom.hasSpray || 'N/A'}
             </small><br>
             <button class="review-button" data-name="${restroom.name}">เขียนรีวิว</button>
@@ -264,9 +269,7 @@ function drawRestroomMarkers(restroomsToDraw) {
 function showReviews(restroomName, popup, button) {
     const container = popup.querySelector('.reviews-container');
     container.innerHTML = '<em>กำลังโหลดรีวิว...</em>';
-
     const matchingReviews = allComments.filter(c => c.restroomName === restroomName);
-
     if (matchingReviews.length === 0) {
         container.innerHTML = '<em>ยังไม่มีรีวิวสำหรับที่นี่</em>';
     } else {
@@ -282,21 +285,28 @@ function showReviews(restroomName, popup, button) {
         });
         container.innerHTML = html;
     }
-    
     button.style.display = 'none';
 }
 
+/**
+ * ⬅️ UPDATED: Added CrowdLevel to filter logic
+ */
 function applyFilters() {
     const wantPaper = filterPaper.checked;
     const wantSpray = filterSpray.checked;
     const wantCondition = filterCondition.value;
+    const wantCrowd = filterCrowd.value; // <-- NEW
+
     statusElement.innerText = 'กำลังฟิลเตอร์...';
+    
     const filteredRestrooms = allRestrooms.filter(restroom => {
         if (wantPaper && restroom.hasPaper !== 'Yes') return false;
         if (wantSpray && restroom.hasSpray !== 'Yes') return false;
         if (wantCondition !== 'any' && restroom.condition !== wantCondition) return false;
+        if (wantCrowd !== 'any' && restroom.crowdLevel !== wantCrowd) return false; // <-- NEW
         return true;
     });
+    
     clearAllMarkers();
     drawRestroomMarkers(filteredRestrooms);
     statusElement.innerText = `แสดงผล ${filteredRestrooms.length} จาก ${allRestrooms.length} แห่ง`;
@@ -306,12 +316,17 @@ function applyFilters() {
 //  --- FORM SUBMISSION LOGIC ---
 // =======================================================
 
+/**
+ * ⬅️ UPDATED: Added CrowdLevel to form data
+ */
 addRestroomForm.addEventListener('submit', function(e) {
     e.preventDefault();
     const name = newRestroomNameInput.value;
     const hasPaper = newPaperCheckbox.checked ? 'Yes' : 'No';
     const hasSpray = newSprayCheckbox.checked ? 'Yes' : 'No';
     const condition = newConditionSelect.value;
+    const crowdLevel = newCrowdSelect.value; // <-- NEW
+
     if (!name) {
         addStatus.innerText = 'กรุณาใส่ชื่อห้องน้ำ';
         addStatus.className = 'status-message error';
@@ -331,7 +346,8 @@ addRestroomForm.addEventListener('submit', function(e) {
                 lon: freshLon,
                 hasPaper: hasPaper,
                 hasSpray: hasSpray,
-                condition: condition
+                condition: condition,
+                crowdLevel: crowdLevel // <-- NEW
             };
             fetch(googleScriptURL, {
                 method: 'POST',
@@ -402,4 +418,3 @@ reviewForm.addEventListener('submit', function(e) {
         reviewStatus.className = 'status-message error';
     });
 });
-
