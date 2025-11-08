@@ -48,6 +48,10 @@ const filterCrowd = document.getElementById('filter-crowd');
 const filterToggleButton = document.getElementById('filter-toggle-button');
 const filterSection = document.getElementById('filter-section');
 
+// ⬇️ NEW: Get the theme switcher button ⬇️
+const themeSwitcher = document.getElementById('theme-switcher');
+// ⬆️ END OF NEW ⬆️
+
 // =======================================================
 //  --- INITIALIZATION ---
 // =======================================================
@@ -67,9 +71,39 @@ reviewModal.addEventListener('click', (e) => {
     }
 });
 
+// ⬇️ NEW: Add logic for the theme switcher ⬇️
+themeSwitcher.addEventListener('click', () => {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme');
+    
+    // Toggle between 'light' and 'dark'
+    // This overrides the 'auto' setting, which is what we want
+    if (currentTheme !== 'light') {
+        html.setAttribute('data-theme', 'light');
+        themeSwitcher.innerText = '🌙'; // Show icon to switch to Dark
+    } else {
+        html.setAttribute('data-theme', 'dark');
+        themeSwitcher.innerText = '☀️'; // Show icon to switch to Light
+    }
+});
+
+// ⬇️ NEW: Set the initial icon for the theme button ⬇️
+// This runs *after* the page loads to see what 'auto' resolved to
+window.addEventListener('load', () => {
+    const resolvedTheme = getComputedStyle(document.documentElement).getPropertyValue('color-scheme');
+    if (resolvedTheme === 'dark') {
+        themeSwitcher.innerText = '☀️'; // Currently dark, show sun
+    } else {
+        themeSwitcher.innerText = '🌙'; // Currently light, show moon
+    }
+});
+// ⬆️ END OF NEW ⬆️
+
 // =======================================================
 //  --- MAIN MAP & DATA LOGIC ---
 // =======================================================
+// (All the code below this line is exactly the same as before)
+// (You don't need to change anything here)
 
 async function onLocationSuccess(position) {
     userLocation = {
@@ -187,30 +221,20 @@ function formatDistance(km) {
     }
 }
 
-// ⬇️ --- (1) NEW BILINGUAL TRANSLATION FUNCTION --- ⬇️
-/**
- * Translates the saved English values back to bilingual text
- */
 function translateSpec(value) {
     const translations = {
-        // Condition
         "Excellent": "ยอดเยี่ยม (Excellent)",
         "Well": "ดี (Well)",
         "Bad": "แย่ (Bad)",
-        // Crowd
         "Not Crowded": "ไม่แออัด (Not Crowded)",
         "Normal": "ปกติ (Normal)",
         "Very Crowded": "แออัดมาก (Very Crowded)",
-        // Yes/No
         "Yes": "มี (Yes)",
         "No": "ไม่มี (No)",
-        // Default
         "N/A": "N/A"
     };
-    // Return the translation, or the original value if not found
     return translations[value] || value;
 }
-// ⬆️ --- END OF NEW FUNCTION --- ⬆️
 
 // =======================================================
 //  --- FILTERING & DRAWING LOGIC ---
@@ -223,15 +247,11 @@ function clearAllMarkers() {
     currentMarkers = [];
 }
 
-/**
- * ⬅️ UPDATED: This function now uses translateSpec()
- */
 function drawRestroomMarkers(restroomsToDraw) {
     restroomsToDraw.forEach(restroom => {
         const distance = getDistance(userLocation.lat, userLocation.lon, restroom.lat, restroom.lon);
         const distanceStr = formatDistance(distance);
         
-        // Calculate Average Score
         const matchingReviews = allComments.filter(c => c.restroomName === restroom.name);
         let scoreHtml = '<em>ยังไม่มีรีวิว</em>';
         
@@ -249,14 +269,11 @@ function drawRestroomMarkers(restroomsToDraw) {
             `;
         }
 
-        // --- (2) NEW: Translate specs to bilingual ---
         const conditionStr = translateSpec(restroom.condition || 'N/A');
         const crowdStr = translateSpec(restroom.crowdLevel || 'N/A');
         const paperStr = translateSpec(restroom.hasPaper || 'N/A');
         const sprayStr = translateSpec(restroom.hasSpray || 'N/A');
-        // --- END OF NEW ---
 
-        // --- (3) NEW: Updated popup content ---
         const popupContent = `
             <b>${restroom.name}</b><br>
             ${scoreHtml}
@@ -320,14 +337,11 @@ function showReviews(restroomName, popup, button) {
     button.style.display = 'none';
 }
 
-/**
- * ⬅️ UPDATED: Added CrowdLevel to filter logic
- */
 function applyFilters() {
     const wantPaper = filterPaper.checked;
     const wantSpray = filterSpray.checked;
     const wantCondition = filterCondition.value;
-    const wantCrowd = filterCrowd.value; // <-- NEW
+    const wantCrowd = filterCrowd.value;
 
     statusElement.innerText = 'กำลังฟิลเตอร์...';
     
@@ -335,7 +349,7 @@ function applyFilters() {
         if (wantPaper && restroom.hasPaper !== 'Yes') return false;
         if (wantSpray && restroom.hasSpray !== 'Yes') return false;
         if (wantCondition !== 'any' && restroom.condition !== wantCondition) return false;
-        if (wantCrowd !== 'any' && restroom.crowdLevel !== wantCrowd) return false; // <-- NEW
+        if (wantCrowd !== 'any' && restroom.crowdLevel !== wantCrowd) return false;
         return true;
     });
     
@@ -348,16 +362,13 @@ function applyFilters() {
 //  --- FORM SUBMISSION LOGIC ---
 // =======================================================
 
-/**
- * ⬅️ UPDATED: Added CrowdLevel to form data
- */
 addRestroomForm.addEventListener('submit', function(e) {
     e.preventDefault();
     const name = newRestroomNameInput.value;
     const hasPaper = newPaperCheckbox.checked ? 'Yes' : 'No';
     const hasSpray = newSprayCheckbox.checked ? 'Yes' : 'No';
     const condition = newConditionSelect.value;
-    const crowdLevel = newCrowdSelect.value; // <-- NEW
+    const crowdLevel = newCrowdSelect.value;
 
     if (!name) {
         addStatus.innerText = 'กรุณาใส่ชื่อห้องน้ำ';
@@ -379,7 +390,7 @@ addRestroomForm.addEventListener('submit', function(e) {
                 hasPaper: hasPaper,
                 hasSpray: hasSpray,
                 condition: condition,
-                crowdLevel: crowdLevel // <-- NEW
+                crowdLevel: crowdLevel
             };
             fetch(googleScriptURL, {
                 method: 'POST',
@@ -450,4 +461,3 @@ reviewForm.addEventListener('submit', function(e) {
         reviewStatus.className = 'status-message error';
     });
 });
-
