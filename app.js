@@ -22,54 +22,91 @@ const restroomIcon = L.icon({
 });
 
 // =======================================================
-//  --- GET HTML ELEMENTS ---
+// ⬇️ NEW: Run all setup code *after* the HTML page loads ⬇️
 // =======================================================
-const statusElement = document.getElementById('status');
-const reviewModal = document.getElementById('review-modal');
-const reviewForm = document.getElementById('review-form');
-const reviewTitle = document.getElementById('review-title');
-const reviewRestroomNameInput = document.getElementById('review-restroom-name');
-const reviewStarsInput = document.getElementById('review-stars');
-const reviewCommentInput = document.getElementById('review-comment');
-const reviewerNameInput = document.getElementById('reviewer-name');
-const reviewStatus = document.getElementById('review-status');
-const closeModalButton = document.querySelector('.close-modal');
-const addRestroomForm = document.getElementById('add-restroom-form');
-const newRestroomNameInput = document.getElementById('new-restroom-name');
-const newPaperCheckbox = document.getElementById('new-paper');
-const newSprayCheckbox = document.getElementById('new-spray');
-const newConditionSelect = document.getElementById('new-condition');
-const newCrowdSelect = document.getElementById('new-crowd');
-const addStatus = document.getElementById('add-status');
-const filterButton = document.getElementById('filter-button');
-const filterPaper = document.getElementById('filter-paper');
-const filterSpray = document.getElementById('filter-spray');
-const filterCondition = document.getElementById('filter-condition');
-const filterCrowd = document.getElementById('filter-crowd');
-const filterToggleButton = document.getElementById('filter-toggle-button');
-const filterSection = document.getElementById('filter-section');
+document.addEventListener('DOMContentLoaded', () => {
 
-// =======================================================
-//  --- INITIALIZATION ---
-// =======================================================
-navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError);
-filterButton.addEventListener('click', applyFilters);
+    // =======================================================
+    //  --- GET HTML ELEMENTS ---
+    // =======================================================
+    const statusElement = document.getElementById('status');
+    const reviewModal = document.getElementById('review-modal');
+    const reviewForm = document.getElementById('review-form');
+    const reviewTitle = document.getElementById('review-title');
+    const reviewRestroomNameInput = document.getElementById('review-restroom-name');
+    const reviewStarsInput = document.getElementById('review-stars');
+    const reviewCommentInput = document.getElementById('review-comment');
+    const reviewerNameInput = document.getElementById('reviewer-name');
+    const reviewStatus = document.getElementById('review-status');
+    const closeModalButton = document.querySelector('.close-modal');
+    const addRestroomForm = document.getElementById('add-restroom-form');
+    const newRestroomNameInput = document.getElementById('new-restroom-name');
+    const newPaperCheckbox = document.getElementById('new-paper');
+    const newSprayCheckbox = document.getElementById('new-spray');
+    const newConditionSelect = document.getElementById('new-condition');
+    const newCrowdSelect = document.getElementById('new-crowd');
+    const addStatus = document.getElementById('add-status');
+    const filterButton = document.getElementById('filter-button');
+    const filterPaper = document.getElementById('filter-paper');
+    const filterSpray = document.getElementById('filter-spray');
+    const filterCondition = document.getElementById('filter-condition');
+    const filterCrowd = document.getElementById('filter-crowd');
+    const filterToggleButton = document.getElementById('filter-toggle-button');
+    const filterSection = document.getElementById('filter-section');
+    const themeSwitcher = document.getElementById('theme-switcher');
 
-filterToggleButton.addEventListener('click', () => {
-    const isVisible = filterSection.classList.toggle('is-visible');
-});
+    // =======================================================
+    //  --- INITIALIZATION ---
+    // =======================================================
+    navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError);
+    filterButton.addEventListener('click', applyFilters);
 
-closeModalButton.addEventListener('click', () => {
-    reviewModal.close();
-});
-reviewModal.addEventListener('click', (e) => {
-    if (e.target === reviewModal) {
+    filterToggleButton.addEventListener('click', () => {
+        filterSection.classList.toggle('is-visible');
+    });
+
+    closeModalButton.addEventListener('click', () => {
         reviewModal.close();
+    });
+    reviewModal.addEventListener('click', (e) => {
+        if (e.target === reviewModal) {
+            reviewModal.close();
+        }
+    });
+
+    // Theme Switcher Logic (now safely inside the listener)
+    themeSwitcher.addEventListener('click', () => {
+        const html = document.documentElement;
+        const currentTheme = html.getAttribute('data-theme');
+        
+        if (currentTheme !== 'light') {
+            html.setAttribute('data-theme', 'light');
+            themeSwitcher.innerText = '🌙'; // Show icon to switch to Dark
+        } else {
+            html.setAttribute('data-theme', 'dark');
+            themeSwitcher.innerText = '☀️'; // Show icon to switch to Light
+        }
+    });
+
+    // Set the initial icon for the theme button
+    const resolvedTheme = getComputedStyle(document.documentElement).getPropertyValue('color-scheme');
+    if (resolvedTheme === 'dark') {
+        themeSwitcher.innerText = '☀️'; // Currently dark, show sun
+    } else {
+        themeSwitcher.innerText = '🌙'; // Currently light, show moon
     }
+    
+    // Attach listeners to forms
+    addRestroomForm.addEventListener('submit', handleAddRestroom);
+    reviewForm.addEventListener('submit', handleReviewSubmit);
 });
+// =======================================================
+// ⬆️ End of the new DOMContentLoaded wrapper ⬆️
+// =======================================================
+
 
 // =======================================================
-//  --- MAIN MAP & DATA LOGIC ---
+//  --- ALL FUNCTIONS (Defined globally) ---
 // =======================================================
 
 async function onLocationSuccess(position) {
@@ -77,8 +114,10 @@ async function onLocationSuccess(position) {
         lat: position.coords.latitude,
         lon: position.coords.longitude
     };
+    // We must get the statusElement again *inside* the function
+    const statusElement = document.getElementById('status');
     statusElement.innerText = "กำลังโหลดแผนที่...";
-    loadMap(userLocation.lat, userLocation.lon); // Load the map with the user's location
+    loadMap(userLocation.lat, userLocation.lon);
 
     statusElement.innerText = "กำลังดึงข้อมูลห้องน้ำ...";
     try {
@@ -111,20 +150,16 @@ async function onLocationSuccess(position) {
 
 function onLocationError(error) {
     console.error('Geolocation error:', error);
+    const statusElement = document.getElementById('status');
     statusElement.innerText = 'ไม่สามารถรับตำแหน่งของคุณได้ โปรดอนุญาตให้แชร์ตำแหน่ง';
 }
 
-/**
- * ⬅️ UPDATED: This function now uses L.circleMarker
- * This changes your "Your Location" pin from a square to a circle
- */
 function loadMap(userLat, userLon) {
     map = L.map('map').setView([userLat, userLon], 15);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
-    // Use L.circleMarker to create a blue circle for "Your Location"
     L.circleMarker([userLat, userLon], {
         radius: 10,
         color: '#007bff',
@@ -134,8 +169,6 @@ function loadMap(userLat, userLon) {
         .bindPopup('<b>ตำแหน่งของคุณ</b>')
         .openPopup();
 }
-// ⬆️ END OF UPDATED FUNCTION ⬆️
-
 
 function parseLocationCSV(csvText) {
     const lines = csvText.trim().split('\n');
@@ -209,10 +242,6 @@ function translateSpec(value) {
     };
     return translations[value] || value;
 }
-
-// =======================================================
-//  --- FILTERING & DRAWING LOGIC ---
-// =======================================================
 
 function clearAllMarkers() {
     currentMarkers.forEach(marker => {
@@ -312,6 +341,13 @@ function showReviews(restroomName, popup, button) {
 }
 
 function applyFilters() {
+    // Get elements again inside the function (safer)
+    const filterPaper = document.getElementById('filter-paper');
+    const filterSpray = document.getElementById('filter-spray');
+    const filterCondition = document.getElementById('filter-condition');
+    const filterCrowd = document.getElementById('filter-crowd');
+    const statusElement = document.getElementById('status');
+
     const wantPaper = filterPaper.checked;
     const wantSpray = filterSpray.checked;
     const wantCondition = filterCondition.value;
@@ -332,12 +368,18 @@ function applyFilters() {
     statusElement.innerText = `แสดงผล ${filteredRestrooms.length} จาก ${allRestrooms.length} แห่ง`;
 }
 
-// =======================================================
-//  --- FORM SUBMISSION LOGIC ---
-// =======================================================
-
-addRestroomForm.addEventListener('submit', function(e) {
+// --- "Add New Restroom" Form Handler ---
+function handleAddRestroom(e) {
     e.preventDefault();
+    
+    // Get elements again inside the function
+    const newRestroomNameInput = document.getElementById('new-restroom-name');
+    const newPaperCheckbox = document.getElementById('new-paper');
+    const newSprayCheckbox = document.getElementById('new-spray');
+    const newConditionSelect = document.getElementById('new-condition');
+    const newCrowdSelect = document.getElementById('new-crowd');
+    const addStatus = document.getElementById('add-status');
+
     const name = newRestroomNameInput.value;
     const hasPaper = newPaperCheckbox.checked ? 'Yes' : 'No';
     const hasSpray = newSprayCheckbox.checked ? 'Yes' : 'No';
@@ -349,8 +391,15 @@ addRestroomForm.addEventListener('submit', function(e) {
         addStatus.className = 'status-message error';
         return;
     }
+    if (!condition || !crowdLevel) {
+        addStatus.innerText = 'กรุณาเลือกสภาพและความหนาแน่น';
+        addStatus.className = 'status-message error';
+        return;
+    }
+    
     addStatus.innerText = 'กำลังค้นหาตำแหน่งปัจจุบันของคุณ...';
     addStatus.className = 'status-message';
+    
     navigator.geolocation.getCurrentPosition(
         function(position) {
             const freshLat = position.coords.latitude;
@@ -376,7 +425,7 @@ addRestroomForm.addEventListener('submit', function(e) {
                 if (response.status === 'success') {
                     addStatus.innerText = 'เพิ่มห้องน้ำสำเร็จแล้ว!';
                     addStatus.className = 'status-message success';
-                    addRestroomForm.reset();
+                    document.getElementById('add-restroom-form').reset();
                 } else {
                     throw new Error(response.message);
                 }
@@ -392,9 +441,16 @@ addRestroomForm.addEventListener('submit', function(e) {
             addStatus.className = 'status-message error';
         }
     );
-});
+}
 
+// --- "Review Modal" Logic ---
 function openReviewModal(restroomName) {
+    const reviewModal = document.getElementById('review-modal');
+    const reviewTitle = document.getElementById('review-title');
+    const reviewRestroomNameInput = document.getElementById('review-restroom-name');
+    const reviewStatus = document.getElementById('review-status');
+    const reviewForm = document.getElementById('review-form');
+
     reviewTitle.innerText = `เขียนรีวิวสำหรับ "${restroomName}"`;
     reviewRestroomNameInput.value = restroomName;
     reviewStatus.innerText = '';
@@ -402,10 +458,20 @@ function openReviewModal(restroomName) {
     reviewModal.showModal();
 }
 
-reviewForm.addEventListener('submit', function(e) {
+function handleReviewSubmit(e) {
     e.preventDefault();
+    
+    // Get elements again inside the function
+    const reviewStatus = document.getElementById('review-status');
+    const reviewRestroomNameInput = document.getElementById('review-restroom-name');
+    const reviewStarsInput = document.getElementById('review-stars');
+    const reviewCommentInput = document.getElementById('review-comment');
+    const reviewerNameInput = document.getElementById('reviewer-name');
+    const reviewModal = document.getElementById('review-modal');
+
     reviewStatus.innerText = 'กำลังส่งรีวิว...';
     reviewStatus.className = 'status-message';
+    
     const data = {
         type: 'new_comment',
         restroomName: reviewRestroomNameInput.value,
@@ -413,6 +479,7 @@ reviewForm.addEventListener('submit', function(e) {
         comment: reviewCommentInput.value,
         reviewerName: reviewerNameInput.value
     };
+    
     fetch(googleScriptURL, {
         method: 'POST',
         body: JSON.stringify(data),
@@ -434,4 +501,4 @@ reviewForm.addEventListener('submit', function(e) {
         reviewStatus.innerText = 'เกิดข้อผิดพลาด: ' + error.message;
         reviewStatus.className = 'status-message error';
     });
-});
+}
