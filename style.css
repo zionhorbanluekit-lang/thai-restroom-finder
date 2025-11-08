@@ -221,3 +221,25 @@ article.filter-container.is-visible .toggle-icon {
         right: 0.75rem;
     }
 }
+
+/* --- 14. NEW: DISTANCE SLIDER --- */
+
+.distance-filter {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.distance-filter label {
+    font-size: 1rem;
+    color: var(--pico-color);
+}
+
+.distance-filter label strong {
+    color: var(--brand-color);
+    font-size: 1.1em;
+}
+
+/* Make the slider track thicker */
+input[type="range"] {
+    height: 12px;
+}
