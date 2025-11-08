@@ -35,7 +35,6 @@ main.container-card {
 }
 
 /* --- 3. SECTIONS (Forms) --- */
-/* (This style is just for the "Add Restroom" form now) */
 article.form-container {
     background-color: var(--body-background);
     border: var(--card-border);
@@ -138,30 +137,30 @@ footer { text-align: center; opacity: 0.8; }
 .popup-score { font-size: 1.1em; font-weight: 500; margin: 5px 0; color: #ffc107; }
 .popup-score strong { color: var(--pico-color); }
 
-/* --- 12. NEW/UPDATED: COLLAPSIBLE FILTER STYLES --- */
+/* --- 12. UPDATED: COLLAPSIBLE FILTER STYLES --- */
 article.filter-container {
     padding: 0; /* Remove padding from the <article> itself */
     margin-bottom: var(--pico-spacing);
     background-color: var(--body-background);
     border: var(--card-border);
     border-radius: var(--pico-border-radius);
-    overflow: hidden; /* This is important */
+    overflow: hidden; 
 }
 
-/* This is the new clickable header */
+/* Clickable header with reduced padding */
 .filter-toggle-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
-    padding: 1.5rem;
-    padding-bottom: 10px; /* Match old .section-title padding */
+    padding: 1rem; /* REDUCED from 1.5rem */
 }
 .filter-toggle-header h3 {
-    margin-bottom: 0; /* Remove default margin from h3 */
+    margin-bottom: 0; 
+    font-size: 1.1rem; /* Made title slightly smaller */
 }
 .filter-toggle-header:hover h3 {
-    color: var(--brand-color); /* Change title color on hover */
+    color: var(--brand-color);
 }
 
 /* The arrow icon */
@@ -172,19 +171,19 @@ article.filter-container {
     transform-origin: center;
 }
 
-/* This is the content that gets hidden/shown */
+/* The content that gets hidden/shown */
 .filter-content {
     max-height: 0; /* HIDDEN BY DEFAULT */
     overflow: hidden;
     transition: max-height 0.3s ease-in-out;
-    padding: 0 1.5rem; /* Set horizontal padding */
+    padding: 0 1rem; /* Set horizontal padding */
 }
 
 /* This class is added by JS */
 article.filter-container.is-visible .filter-content {
-    max-height: 500px; /* Set to a large enough value to show content */
-    padding: 1.5rem; /* Add back full padding */
-    padding-top: 0; /* No padding on top */
+    max-height: 500px; 
+    padding: 1rem; /* REDUCED from 1.5rem */
+    padding-top: 0; 
     border-top: 1px dashed var(--card-border);
     margin-top: 10px;
 }
