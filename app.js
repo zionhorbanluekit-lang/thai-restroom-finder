@@ -3,10 +3,10 @@
 // =======================================================
 const googleScriptURL = '/api/gas-proxy'; // Vercel Proxy URL
 
-// This is your Location sheet URL (Unchanged)
-const locationSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?output=csv';
+// ⬇️ This is your Location sheet URL
+const locationSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A6VHonp/pub?output=csv';
 
-// ⬇️ This is your new, updated Comment sheet link ⬇️
+// ⬇️ This is your Comment sheet URL
 const commentSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?gid=714346684&single=true&output=csv';
 // =======================================================
 
@@ -20,7 +20,7 @@ let allRestrooms = [];
 let allComments = [];
 let currentMarkers = []; 
 const restroomIcon = L.icon({
-    iconUrl: 'pin.svg',
+    iconUrl: 'pin.svg', // Your custom pin
     iconSize:     [38, 38],
     iconAnchor:   [19, 38],
     popupAnchor:  [0, -38]
@@ -50,12 +50,34 @@ const filterPaper = document.getElementById('filter-paper');
 const filterSpray = document.getElementById('filter-spray');
 const filterCondition = document.getElementById('filter-condition');
 
+// ⬇️ NEW: Get the toggle button and the section it controls ⬇️
+const filterToggleButton = document.getElementById('filter-toggle-button');
+const filterSection = document.getElementById('filter-section');
+// ⬆️ END OF NEW ⬆️
+
 // =======================================================
 //  --- INITIALIZATION ---
 // =======================================================
 navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError);
 filterButton.addEventListener('click', applyFilters);
 
+// ⬇️ NEW: Add listener for the filter toggle button ⬇️
+filterToggleButton.addEventListener('click', () => {
+    // Toggle the 'is-visible' class on the filter section
+    const isVisible = filterSection.classList.toggle('is-visible');
+    
+    // Update the button text
+    if (isVisible) {
+        filterToggleButton.innerText = 'ซ่อนตัวกรอง (Hide Filters)';
+        filterToggleButton.classList.remove('outline'); // Make button solid
+    } else {
+        filterToggleButton.innerText = 'แสดงตัวกรอง (Show Filters)';
+        filterToggleButton.classList.add('outline'); // Make button outlined
+    }
+});
+// ⬆️ END OF NEW ⬆️
+
+// Logic for closing the review modal
 closeModalButton.addEventListener('click', () => {
     reviewModal.close();
 });
@@ -81,7 +103,7 @@ async function onLocationSuccess(position) {
     try {
         // (1) Fetch Locations
         const response = await fetch(locationSheetURL + '&t=' + new Date().getTime());
-        if (!response.ok) throw new Error('Network response was not ok');
+        if (!response.ok) throw new Error(`Location Sheet Error: ${response.statusText}`);
         const csvText = await response.text();
         allRestrooms = parseLocationCSV(csvText);
 
@@ -92,7 +114,7 @@ async function onLocationSuccess(position) {
         // (2) Fetch all Comments
         statusElement.innerText = `พบ ${allRestrooms.length} ห้องน้ำ. กำลังโหลดรีวิว...`;
         const commentResponse = await fetch(commentSheetURL + '&t=' + new Date().getTime());
-        if (!commentResponse.ok) throw new Error('Could not fetch comments');
+        if (!commentResponse.ok) throw new Error(`Comment Sheet Error: ${commentResponse.statusText}`);
         const commentCsvText = await commentResponse.text();
         allComments = parseCommentCSV(commentCsvText);
 
@@ -102,7 +124,7 @@ async function onLocationSuccess(position) {
 
     } catch (error) {
         console.error('Error fetching or parsing sheet:', error);
-        statusElement.innerText = 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
+        statusElement.innerText = `เกิดข้อผิดพลาดในการโหลดข้อมูล: ${error.message}`;
     }
 }
 
@@ -117,6 +139,7 @@ function loadMap(userLat, userLon) {
         attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
+    // Use a blue circle marker for "Your Location"
     L.circleMarker([userLat, userLon], {
         radius: 10,
         color: '#007bff',
@@ -185,7 +208,7 @@ function formatDistance(km) {
 }
 
 // =======================================================
-//  --- FILTERING & DRAWING LOGIC (UPDATED) ---
+//  --- FILTERING & DRAWING LOGIC ---
 // =======================================================
 
 function clearAllMarkers() {
@@ -195,17 +218,14 @@ function clearAllMarkers() {
     currentMarkers = [];
 }
 
-/**
- * Draws a specific set of restrooms on the map
- */
 function drawRestroomMarkers(restroomsToDraw) {
     restroomsToDraw.forEach(restroom => {
         const distance = getDistance(userLocation.lat, userLocation.lon, restroom.lat, restroom.lon);
         const distanceStr = formatDistance(distance);
         
-        // --- (1) Calculate Average Score ---
+        // Calculate Average Score
         const matchingReviews = allComments.filter(c => c.restroomName === restroom.name);
-        let scoreHtml = '<em>ยังไม่มีรีวิว</em>'; // Default text
+        let scoreHtml = '<em>ยังไม่มีรีวิว</em>';
         
         if (matchingReviews.length > 0) {
             const totalScore = matchingReviews.reduce((acc, review) => acc + parseFloat(review.stars), 0);
@@ -221,10 +241,11 @@ function drawRestroomMarkers(restroomsToDraw) {
             `;
         }
 
-        // --- (2) Updated popup content ---
+        // Updated popup content
         const popupContent = `
             <b>${restroom.name}</b><br>
-            ${scoreHtml} <big>📍 ${distanceStr} จากตำแหน่งของคุณ</big><br>
+            ${scoreHtml}
+            <big>📍 ${distanceStr} จากตำแหน่งของคุณ</big><br>
             <small>
                 <b>สภาพ:</b> ${restroom.condition || 'N/A'}<br>
                 <b>ทิชชู่:</b> ${restroom.hasPaper || 'N/A'}<br>
@@ -235,6 +256,7 @@ function drawRestroomMarkers(restroomsToDraw) {
             <div class="reviews-container"></div>
         `;
         
+        // Use the custom 'restroomIcon'
         const marker = L.marker([restroom.lat, restroom.lon], { icon: restroomIcon })
             .addTo(map)
             .bindPopup(popupContent);
@@ -306,37 +328,46 @@ function applyFilters() {
 }
 
 // =======================================================
-//  --- FORM SUBMISSION LOGIC (No changes here) ---
+//  --- FORM SUBMISSION LOGIC (WITH LOCATION FIX) ---
 // =======================================================
 
 // --- "Add New Restroom" Form ---
 addRestroomForm.addEventListener('submit', function(e) {
     e.preventDefault();
+    
     const name = newRestroomNameInput.value;
     const hasPaper = newPaperCheckbox.checked ? 'Yes' : 'No';
     const hasSpray = newSprayCheckbox.checked ? 'Yes' : 'No';
     const condition = newConditionSelect.value;
+    
     if (!name) {
         addStatus.innerText = 'กรุณาใส่ชื่อห้องน้ำ';
         addStatus.className = 'status-message error';
         return;
     }
+    
     addStatus.innerText = 'กำลังค้นหาตำแหน่งปัจจุบันของคุณ...';
     addStatus.className = 'status-message';
+
+    // 1. Get a FRESH, NEW location *right now*
     navigator.geolocation.getCurrentPosition(
-        function(position) {
+        function(position) { // (A) If getting location is successful
+            
             const freshLat = position.coords.latitude;
             const freshLon = position.coords.longitude;
             addStatus.innerText = 'กำลังเพิ่ม...';
+
             const data = {
                 type: 'new_restroom',
                 name: name,
-                lat: freshLat,
-                lon: freshLon,
+                lat: freshLat, // <-- Use the NEW location
+                lon: freshLon, // <-- Use the NEW location
                 hasPaper: hasPaper,
                 hasSpray: hasSpray,
                 condition: condition
             };
+
+            // 3. Send data to the Vercel Proxy
             fetch(googleScriptURL, {
                 method: 'POST',
                 body: JSON.stringify(data),
@@ -356,14 +387,16 @@ addRestroomForm.addEventListener('submit', function(e) {
                 addStatus.innerText = 'เกิดข้อผิดพลาด (Fetch): ' + error.message;
                 addStatus.className = 'status-message error';
             });
+
         }, 
-        function(error) {
+        function(error) { // (B) If getting location fails
             console.error('Error getting fresh location:', error);
             addStatus.innerText = 'เกิดข้อผิดพลาด: ไม่สามารถรับตำแหน่งปัจจุบันของคุณได้';
             addStatus.className = 'status-message error';
         }
     );
 });
+
 
 // --- "Review Modal" Logic ---
 function openReviewModal(restroomName) {
@@ -407,4 +440,3 @@ reviewForm.addEventListener('submit', function(e) {
         reviewStatus.className = 'status-message error';
     });
 });
-
