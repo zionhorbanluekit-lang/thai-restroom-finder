@@ -4,7 +4,7 @@
 const googleScriptURL = '/api/gas-proxy'; // Vercel Proxy URL
 
 // This is your Location sheet URL (Unchanged)
-const locationSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A6VHonp/pub?output=csv';
+const locationSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?output=csv';
 
 // ⬇️ This is your new, updated Comment sheet link ⬇️
 const commentSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?gid=714346684&single=true&output=csv';
@@ -407,3 +407,4 @@ reviewForm.addEventListener('submit', function(e) {
         reviewStatus.className = 'status-message error';
     });
 });
+
