@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th" data-theme="auto"> 
+<html lang="th" data-theme="auto">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,11 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
-    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -24,7 +21,11 @@
             <p id="status">กำลังค้นหาตำแหน่งของคุณ...</p>
         </hgroup>
         
-        <article class="filter-container">
+        <button id="filter-toggle-button" class="secondary outline">
+            แสดงตัวกรอง (Show Filters)
+        </button>
+        
+        <article class="filter-container" id="filter-section"> 
             <h3 class="section-title">ตัวกรอง (Filter)</h3>
             <div class="filter-options grid">
                 <label>
@@ -74,27 +75,24 @@
             </form>
         </article>
 
-
         <footer>
             <hr>
             <h3>สนับสนุนค่ากาแฟ ☕</h3>
             <p>แอปนี้ใช้งานได้ฟรี หากคุณต้องการสนับสนุนผู้พัฒนา:</p>
             <img src="donate.jpg" alt="สแกนเพื่อบริจาค (PromptPay)" class="qr-code">
-            
             <p><small>Contact Developer: <a href="mailto:zionhorbanluekit@gmail.com">zionhorbanluekit@gmail.com</a></small></p>
-            
         </footer>
 
-    </main> <dialog id="review-modal">
+    </main> 
+
+    <dialog id="review-modal">
         <article>
             <header>
                 <button aria-label="Close" class="close-modal" data-target="review-modal">×</button>
                 <h2 id="review-title">เขียนรีวิวสำหรับ...</h2>
             </header>
-            
             <form id="review-form">
                 <input type="hidden" id="review-restroom-name">
-                
                 <label for="review-stars">คะแนน (1-5 ดาว):</label>
                 <select id="review-stars" required>
                     <option value="5">⭐⭐⭐⭐⭐</option>
@@ -103,22 +101,17 @@
                     <option value="2">⭐⭐</option>
                     <option value="1">⭐</option>
                 </select>
-                
                 <label for="review-comment">ความคิดเห็น:</label>
                 <textarea id="review-comment" rows="4" placeholder="ห้องน้ำสะอาดมาก..."></textarea>
-                
                 <label for="reviewer-name">ชื่อของคุณ (ไม่บังคับ):</label>
                 <input type="text" id="reviewer-name" placeholder="สมชายใจดี">
-                
                 <button type="submit">ส่งรีวิว</button>
                 <p id="review-status" class="status-message"></p>
             </form>
         </article>
     </dialog>
 
-
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
-
