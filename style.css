@@ -192,3 +192,28 @@ article.filter-container.is-visible .filter-content {
 article.filter-container.is-visible .toggle-icon {
     transform: rotate(180deg);
 }
+
+/* --- 13. NEW: THEME SWITCHER BUTTON --- */
+
+/* This positions the button in the top-right corner */
+#theme-switcher {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    width: auto; /* Override Pico's 100% width */
+    padding: 0.5rem 0.8rem;
+    font-size: 1.1rem;
+}
+
+/* This is needed for the positioning to work */
+main.container-card {
+    position: relative;
+}
+
+/* On mobile, move the button so it's not on top of text */
+@media (max-width: 767px) {
+    #theme-switcher {
+        top: 0.75rem;
+        right: 0.75rem;
+    }
+}
