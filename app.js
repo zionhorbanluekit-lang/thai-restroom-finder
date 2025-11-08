@@ -1,15 +1,9 @@
 // =======================================================
 //  --- CONFIGURATION ---
 // =======================================================
-const googleScriptURL = '/api/gas-proxy'; // Vercel Proxy URL
-
-// ⬇️ Your CORRECT Location Sheet URL ⬇️
-const locationSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?output=csv';
-
-// ⬇️ Your CORRECT Comment Sheet URL ⬇️
+const googleScriptURL = '/api/gas-proxy';
+const locationSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A6VHonp/pub?output=csv';
 const commentSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?gid=714346684&single=true&output=csv';
-// =======================================================
-
 
 // =======================================================
 //  --- GLOBAL VARIABLES ---
@@ -58,17 +52,14 @@ const filterSection = document.getElementById('filter-section');
 navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError);
 filterButton.addEventListener('click', applyFilters);
 
+// ⬇️ UPDATED: Filter toggle logic is simpler ⬇️
 filterToggleButton.addEventListener('click', () => {
-    const isVisible = filterSection.classList.toggle('is-visible');
-    if (isVisible) {
-        filterToggleButton.innerText = 'ซ่อนตัวกรอง (Hide Filters)';
-        filterToggleButton.classList.remove('outline');
-    } else {
-        filterToggleButton.innerText = 'แสดงตัวกรอง (Show Filters)';
-        filterToggleButton.classList.add('outline');
-    }
+    // Just toggle the class. CSS handles the animation and icon rotation.
+    filterSection.classList.toggle('is-visible');
 });
+// ⬆️ END OF UPDATE ⬆️
 
+// Logic for closing the review modal
 closeModalButton.addEventListener('click', () => {
     reviewModal.close();
 });
@@ -213,7 +204,6 @@ function drawRestroomMarkers(restroomsToDraw) {
         const distance = getDistance(userLocation.lat, userLocation.lon, restroom.lat, restroom.lon);
         const distanceStr = formatDistance(distance);
         
-        // Calculate Average Score
         const matchingReviews = allComments.filter(c => c.restroomName === restroom.name);
         let scoreHtml = '<em>ยังไม่มีรีวิว</em>';
         
@@ -231,7 +221,6 @@ function drawRestroomMarkers(restroomsToDraw) {
             `;
         }
 
-        // Popup content
         const popupContent = `
             <b>${restroom.name}</b><br>
             ${scoreHtml}
