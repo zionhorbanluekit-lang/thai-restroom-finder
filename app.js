@@ -2,18 +2,13 @@
 //  --- CONFIGURATION ---
 // =======================================================
 const googleScriptURL = '/api/gas-proxy'; // Vercel Proxy URL
-const locationSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?output=csv';
-const commentSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?gid=714346684&single=true&output=csv'; // ⚠️ Make sure this is correct
 
-// ⬇️ --- (1) NEW: DEFINE YOUR CUSTOM ICON --- ⬇️
-const restroomIcon = L.icon({
-    iconUrl: 'pin.svg', // <-- The name of your uploaded SVG file
-    
-    iconSize:     [38, 38], // (width, height) - Adjust as needed
-    iconAnchor:   [19, 38], // (half of width, full height) - The tip of the pin
-    popupAnchor:  [0, -38]  // (from iconAnchor) - Where popup opens
-});
-// ⬆️ --- END OF NEW ICON --- ⬆️
+// This is your Location sheet URL (Unchanged)
+const locationSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A6VHonp/pub?output=csv';
+
+// ⬇️ This is your new, updated Comment sheet link ⬇️
+const commentSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?gid=714346684&single=true&output=csv';
+// =======================================================
 
 
 // =======================================================
@@ -24,6 +19,12 @@ let userLocation = null;
 let allRestrooms = []; 
 let allComments = [];
 let currentMarkers = []; 
+const restroomIcon = L.icon({
+    iconUrl: 'pin.svg',
+    iconSize:     [38, 38],
+    iconAnchor:   [19, 38],
+    popupAnchor:  [0, -38]
+});
 
 // =======================================================
 //  --- GET HTML ELEMENTS ---
@@ -110,17 +111,12 @@ function onLocationError(error) {
     statusElement.innerText = 'ไม่สามารถรับตำแหน่งของคุณได้ โปรดอนุญาตให้แชร์ตำแหน่ง';
 }
 
-// ⬇️ --- (2) UPDATED THIS FUNCTION --- ⬇️
-/**
- * Loads the basic map and user's location marker
- */
 function loadMap(userLat, userLon) {
     map = L.map('map').setView([userLat, userLon], 15);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
-    // NEW: Use a blue circle for "Your Location"
     L.circleMarker([userLat, userLon], {
         radius: 10,
         color: '#007bff',
@@ -130,7 +126,6 @@ function loadMap(userLat, userLon) {
         .bindPopup('<b>ตำแหน่งของคุณ</b>')
         .openPopup();
 }
-// ⬆️ --- END OF UPDATED FUNCTION --- ⬆️
 
 function parseLocationCSV(csvText) {
     const lines = csvText.trim().split('\n');
@@ -153,10 +148,10 @@ function parseLocationCSV(csvText) {
 
 function parseCommentCSV(csvText) {
     const lines = csvText.trim().split('\n');
-    const dataLines = lines.slice(1); // Remove header
+    const dataLines = lines.slice(1);
     return dataLines.map(line => {
         const values = line.split(',');
-        if (values.length >= 4) { // Expecting 4 columns
+        if (values.length >= 4) {
             return {
                 restroomName: values[0].trim(),
                 stars: values[1].trim(),
@@ -200,7 +195,6 @@ function clearAllMarkers() {
     currentMarkers = [];
 }
 
-// ⬇️ --- (3) UPDATED THIS FUNCTION --- ⬇️
 /**
  * Draws a specific set of restrooms on the map
  */
@@ -209,9 +203,28 @@ function drawRestroomMarkers(restroomsToDraw) {
         const distance = getDistance(userLocation.lat, userLocation.lon, restroom.lat, restroom.lon);
         const distanceStr = formatDistance(distance);
         
+        // --- (1) Calculate Average Score ---
+        const matchingReviews = allComments.filter(c => c.restroomName === restroom.name);
+        let scoreHtml = '<em>ยังไม่มีรีวิว</em>'; // Default text
+        
+        if (matchingReviews.length > 0) {
+            const totalScore = matchingReviews.reduce((acc, review) => acc + parseFloat(review.stars), 0);
+            const averageScore = totalScore / matchingReviews.length;
+            const roundedStars = Math.round(averageScore);
+            
+            scoreHtml = `
+                <div class="popup-score">
+                    ${'⭐'.repeat(roundedStars)} 
+                    <strong>${averageScore.toFixed(1)}</strong> 
+                    (${matchingReviews.length} รีวิว)
+                </div>
+            `;
+        }
+
+        // --- (2) Updated popup content ---
         const popupContent = `
             <b>${restroom.name}</b><br>
-            <big>📍 ${distanceStr} จากตำแหน่งของคุณ</big><br>
+            ${scoreHtml} <big>📍 ${distanceStr} จากตำแหน่งของคุณ</big><br>
             <small>
                 <b>สภาพ:</b> ${restroom.condition || 'N/A'}<br>
                 <b>ทิชชู่:</b> ${restroom.hasPaper || 'N/A'}<br>
@@ -222,7 +235,6 @@ function drawRestroomMarkers(restroomsToDraw) {
             <div class="reviews-container"></div>
         `;
         
-        // NEW: Add the "icon: restroomIcon" option here
         const marker = L.marker([restroom.lat, restroom.lon], { icon: restroomIcon })
             .addTo(map)
             .bindPopup(popupContent);
@@ -230,6 +242,7 @@ function drawRestroomMarkers(restroomsToDraw) {
         currentMarkers.push(marker);
     });
 
+    // This listener handles all button clicks in the popup
     map.on('popupopen', function(e) {
         const popup = e.popup._container; 
         
@@ -250,7 +263,6 @@ function drawRestroomMarkers(restroomsToDraw) {
         }
     });
 }
-// ⬆️ --- END OF UPDATED FUNCTION --- ⬆️
 
 function showReviews(restroomName, popup, button) {
     const container = popup.querySelector('.reviews-container');
@@ -395,4 +407,3 @@ reviewForm.addEventListener('submit', function(e) {
         reviewStatus.className = 'status-message error';
     });
 });
-
