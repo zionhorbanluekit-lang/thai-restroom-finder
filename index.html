@@ -21,27 +21,29 @@
             <p id="status">กำลังค้นหาตำแหน่งของคุณ...</p>
         </hgroup>
         
-        <button id="filter-toggle-button" class="secondary outline">
-            แสดงตัวกรอง (Show Filters)
-        </button>
-        
         <article class="filter-container" id="filter-section"> 
-            <h3 class="section-title">ตัวกรอง (Filter)</h3>
-            <div class="filter-options grid">
-                <label>
-                    <input type="checkbox" id="filter-paper"> มีทิชชู่
-                </label>
-                <label>
-                    <input type="checkbox" id="filter-spray"> มีสายฉีด
-                </label>
-                <select id="filter-condition">
-                    <option value="any">สภาพ (ทั้งหมด)</option>
-                    <option value="Excellent">ยอดเยี่ยม</option>
-                    <option value="Well">ดี</option>
-                    <option value="Bad">แย่</option>
-                </select>
+            
+            <header class="filter-toggle-header" id="filter-toggle-button">
+                <h3 class="section-title">ตัวกรอง (Filter)</h3>
+                <span class="toggle-icon">▼</span> </header>
+
+            <div class="filter-content">
+                <div class="filter-options grid">
+                    <label>
+                        <input type="checkbox" id="filter-paper"> มีทิชชู่
+                    </label>
+                    <label>
+                        <input type="checkbox" id="filter-spray"> มีสายฉีด
+                    </label>
+                    <select id="filter-condition">
+                        <option value="any">สภาพ (ทั้งหมด)</option>
+                        <option value="Excellent">ยอดเยี่ยม</option>
+                        <option value="Well">ดี</option>
+                        <option value="Bad">แย่</option>
+                    </select>
+                </div>
+                <button id="filter-button" class="contrast">ค้นหา</button>
             </div>
-            <button id="filter-button" class="contrast">ค้นหา</button>
         </article>
 
         <div id="map"></div>
