@@ -25,7 +25,8 @@
             
             <header class="filter-toggle-header" id="filter-toggle-button">
                 <h3 class="section-title">ตัวกรอง (Filter)</h3>
-                <span class="toggle-icon">▼</span> </header>
+                <span class="toggle-icon">▼</span>
+            </header>
 
             <div class="filter-content">
                 <div class="filter-options grid">
@@ -41,7 +42,14 @@
                         <option value="Well">ดี</option>
                         <option value="Bad">แย่</option>
                     </select>
-                </div>
+                    
+                    <select id="filter-crowd">
+                        <option value="any">ความหนาแน่น (ทั้งหมด)</option>
+                        <option value="Not Crowded">ไม่แออัด</option>
+                        <option value="Normal">ปกติ</option>
+                        <option value="Very Crowded">แออัดมาก</option>
+                    </select>
+                    </div>
                 <button id="filter-button" class="contrast">ค้นหา</button>
             </div>
         </article>
@@ -72,6 +80,13 @@
                     <option value="Bad">แย่ (Bad)</option>
                 </select>
 
+                <label for="new-crowd">ความหนาแน่น:</label>
+                <select id="new-crowd" required>
+                    <option value="" disabled selected>-- เลือกความหนาแน่น --</option>
+                    <option value="Not Crowded">ไม่แออัด (Not Crowded)</option>
+                    <option value="Normal">ปกติ (Normal)</option>
+                    <option value="Very Crowded">แออัดมาก (Very Crowded)</option>
+                </select>
                 <button type="submit">เพิ่มที่ตำแหน่งปัจจุบันของฉัน</button>
                 <p id="add-status" class="status-message"></p>
             </form>
