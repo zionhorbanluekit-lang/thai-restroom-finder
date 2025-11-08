@@ -222,3 +222,16 @@ footer {
 .review-item small {
     opacity: 0.8;
 }
+/* --- 10. NEW: POPUP SCORE STYLE --- */
+
+.popup-score {
+    font-size: 1.1em;
+    font-weight: 500;
+    margin: 5px 0;
+    color: #ffc107; /* Yellow for stars */
+}
+
+/* Use the theme's text color for the number part */
+.popup-score strong {
+    color: var(--pico-color);
+}
