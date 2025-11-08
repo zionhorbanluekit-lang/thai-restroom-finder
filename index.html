@@ -24,10 +24,12 @@
         </hgroup>
         
         <article class="filter-container" id="filter-section"> 
+            
             <header class="filter-toggle-header" id="filter-toggle-button">
                 <h3 class="section-title">ตัวกรอง (Filter)</h3>
                 <span class="toggle-icon">▼</span>
             </header>
+
             <div class="filter-content">
                 <div class="filter-options grid">
                     <label>
@@ -48,6 +50,13 @@
                         <option value="Normal">ปกติ</option>
                         <option value="Very Crowded">แออัดมาก</option>
                     </select>
+                </div>
+
+                <div class="distance-filter">
+                    <label for="filter-distance">
+                        ระยะทาง: <strong><span id="distance-value">5</span> กม.</strong> (สูงสุด)
+                    </label>
+                    <input type="range" id="filter-distance" min="1" max="15" value="5">
                 </div>
                 <button id="filter-button" class="contrast">ค้นหา</button>
             </div>
@@ -96,7 +105,7 @@
             <hr>
             <h3>สนับสนุนค่ากาแฟ ☕</h3>
             <p>แอปนี้ใช้งานได้ฟรี หากคุณต้องการสนับสนุนผู้พัฒนา:</p>
-            <img src="donate.jpg" alt="สแกนเพื่อบริอาค (PromptPay)" class="qr-code">
+            <img src="donate.jpg" alt="สแกนเพื่อบริจาค (PromptPay)" class="qr-code">
             <p><small>Contact Developer: <a href="mailto:zionhorbanluekit@gmail.com">zionhorbanluekit@gmail.com</a></small></p>
         </footer>
 
