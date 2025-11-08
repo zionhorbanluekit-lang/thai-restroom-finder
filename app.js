@@ -48,10 +48,6 @@ const filterCrowd = document.getElementById('filter-crowd');
 const filterToggleButton = document.getElementById('filter-toggle-button');
 const filterSection = document.getElementById('filter-section');
 
-// ⬇️ NEW: Get the theme switcher button ⬇️
-const themeSwitcher = document.getElementById('theme-switcher');
-// ⬆️ END OF NEW ⬆️
-
 // =======================================================
 //  --- INITIALIZATION ---
 // =======================================================
@@ -59,7 +55,7 @@ navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError);
 filterButton.addEventListener('click', applyFilters);
 
 filterToggleButton.addEventListener('click', () => {
-    filterSection.classList.toggle('is-visible');
+    const isVisible = filterSection.classList.toggle('is-visible');
 });
 
 closeModalButton.addEventListener('click', () => {
@@ -71,39 +67,9 @@ reviewModal.addEventListener('click', (e) => {
     }
 });
 
-// ⬇️ NEW: Add logic for the theme switcher ⬇️
-themeSwitcher.addEventListener('click', () => {
-    const html = document.documentElement;
-    const currentTheme = html.getAttribute('data-theme');
-    
-    // Toggle between 'light' and 'dark'
-    // This overrides the 'auto' setting, which is what we want
-    if (currentTheme !== 'light') {
-        html.setAttribute('data-theme', 'light');
-        themeSwitcher.innerText = '🌙'; // Show icon to switch to Dark
-    } else {
-        html.setAttribute('data-theme', 'dark');
-        themeSwitcher.innerText = '☀️'; // Show icon to switch to Light
-    }
-});
-
-// ⬇️ NEW: Set the initial icon for the theme button ⬇️
-// This runs *after* the page loads to see what 'auto' resolved to
-window.addEventListener('load', () => {
-    const resolvedTheme = getComputedStyle(document.documentElement).getPropertyValue('color-scheme');
-    if (resolvedTheme === 'dark') {
-        themeSwitcher.innerText = '☀️'; // Currently dark, show sun
-    } else {
-        themeSwitcher.innerText = '🌙'; // Currently light, show moon
-    }
-});
-// ⬆️ END OF NEW ⬆️
-
 // =======================================================
 //  --- MAIN MAP & DATA LOGIC ---
 // =======================================================
-// (All the code below this line is exactly the same as before)
-// (You don't need to change anything here)
 
 async function onLocationSuccess(position) {
     userLocation = {
@@ -111,7 +77,7 @@ async function onLocationSuccess(position) {
         lon: position.coords.longitude
     };
     statusElement.innerText = "กำลังโหลดแผนที่...";
-    loadMap(userLocation.lat, userLocation.lon);
+    loadMap(userLocation.lat, userLocation.lon); // Load the map with the user's location
 
     statusElement.innerText = "กำลังดึงข้อมูลห้องน้ำ...";
     try {
@@ -147,12 +113,17 @@ function onLocationError(error) {
     statusElement.innerText = 'ไม่สามารถรับตำแหน่งของคุณได้ โปรดอนุญาตให้แชร์ตำแหน่ง';
 }
 
+/**
+ * ⬅️ UPDATED: This function now uses L.circleMarker
+ * This changes your "Your Location" pin from a square to a circle
+ */
 function loadMap(userLat, userLon) {
     map = L.map('map').setView([userLat, userLon], 15);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
+    // Use L.circleMarker to create a blue circle for "Your Location"
     L.circleMarker([userLat, userLon], {
         radius: 10,
         color: '#007bff',
@@ -162,6 +133,8 @@ function loadMap(userLat, userLon) {
         .bindPopup('<b>ตำแหน่งของคุณ</b>')
         .openPopup();
 }
+// ⬆️ END OF UPDATED FUNCTION ⬆️
+
 
 function parseLocationCSV(csvText) {
     const lines = csvText.trim().split('\n');
