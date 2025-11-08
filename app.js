@@ -3,10 +3,10 @@
 // =======================================================
 const googleScriptURL = '/api/gas-proxy'; // Vercel Proxy URL
 
-// ⬇️ This is your Location sheet URL
-const locationSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A6VHonp/pub?output=csv';
+// ⬇️ Your CORRECT Location Sheet URL ⬇️
+const locationSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?output=csv';
 
-// ⬇️ This is your Comment sheet URL
+// ⬇️ Your CORRECT Comment Sheet URL ⬇️
 const commentSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?gid=714346684&single=true&output=csv';
 // =======================================================
 
@@ -20,7 +20,7 @@ let allRestrooms = [];
 let allComments = [];
 let currentMarkers = []; 
 const restroomIcon = L.icon({
-    iconUrl: 'pin.svg', // Your custom pin
+    iconUrl: 'pin.svg',
     iconSize:     [38, 38],
     iconAnchor:   [19, 38],
     popupAnchor:  [0, -38]
@@ -49,11 +49,8 @@ const filterButton = document.getElementById('filter-button');
 const filterPaper = document.getElementById('filter-paper');
 const filterSpray = document.getElementById('filter-spray');
 const filterCondition = document.getElementById('filter-condition');
-
-// ⬇️ NEW: Get the toggle button and the section it controls ⬇️
 const filterToggleButton = document.getElementById('filter-toggle-button');
 const filterSection = document.getElementById('filter-section');
-// ⬆️ END OF NEW ⬆️
 
 // =======================================================
 //  --- INITIALIZATION ---
@@ -61,23 +58,17 @@ const filterSection = document.getElementById('filter-section');
 navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError);
 filterButton.addEventListener('click', applyFilters);
 
-// ⬇️ NEW: Add listener for the filter toggle button ⬇️
 filterToggleButton.addEventListener('click', () => {
-    // Toggle the 'is-visible' class on the filter section
     const isVisible = filterSection.classList.toggle('is-visible');
-    
-    // Update the button text
     if (isVisible) {
         filterToggleButton.innerText = 'ซ่อนตัวกรอง (Hide Filters)';
-        filterToggleButton.classList.remove('outline'); // Make button solid
+        filterToggleButton.classList.remove('outline');
     } else {
         filterToggleButton.innerText = 'แสดงตัวกรอง (Show Filters)';
-        filterToggleButton.classList.add('outline'); // Make button outlined
+        filterToggleButton.classList.add('outline');
     }
 });
-// ⬆️ END OF NEW ⬆️
 
-// Logic for closing the review modal
 closeModalButton.addEventListener('click', () => {
     reviewModal.close();
 });
@@ -103,7 +94,7 @@ async function onLocationSuccess(position) {
     try {
         // (1) Fetch Locations
         const response = await fetch(locationSheetURL + '&t=' + new Date().getTime());
-        if (!response.ok) throw new Error(`Location Sheet Error: ${response.statusText}`);
+        if (!response.ok) throw new Error(`Location Sheet Error: ${response.status} ${response.statusText}`);
         const csvText = await response.text();
         allRestrooms = parseLocationCSV(csvText);
 
@@ -114,7 +105,7 @@ async function onLocationSuccess(position) {
         // (2) Fetch all Comments
         statusElement.innerText = `พบ ${allRestrooms.length} ห้องน้ำ. กำลังโหลดรีวิว...`;
         const commentResponse = await fetch(commentSheetURL + '&t=' + new Date().getTime());
-        if (!commentResponse.ok) throw new Error(`Comment Sheet Error: ${commentResponse.statusText}`);
+        if (!commentResponse.ok) throw new Error(`Comment Sheet Error: ${commentResponse.status} ${commentResponse.statusText}`);
         const commentCsvText = await commentResponse.text();
         allComments = parseCommentCSV(commentCsvText);
 
@@ -139,7 +130,6 @@ function loadMap(userLat, userLon) {
         attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
-    // Use a blue circle marker for "Your Location"
     L.circleMarker([userLat, userLon], {
         radius: 10,
         color: '#007bff',
@@ -241,7 +231,7 @@ function drawRestroomMarkers(restroomsToDraw) {
             `;
         }
 
-        // Updated popup content
+        // Popup content
         const popupContent = `
             <b>${restroom.name}</b><br>
             ${scoreHtml}
@@ -256,7 +246,6 @@ function drawRestroomMarkers(restroomsToDraw) {
             <div class="reviews-container"></div>
         `;
         
-        // Use the custom 'restroomIcon'
         const marker = L.marker([restroom.lat, restroom.lon], { icon: restroomIcon })
             .addTo(map)
             .bindPopup(popupContent);
@@ -264,10 +253,8 @@ function drawRestroomMarkers(restroomsToDraw) {
         currentMarkers.push(marker);
     });
 
-    // This listener handles all button clicks in the popup
     map.on('popupopen', function(e) {
         const popup = e.popup._container; 
-        
         const reviewButton = popup.querySelector('.review-button');
         if (reviewButton) {
             reviewButton.onclick = function() {
@@ -275,7 +262,6 @@ function drawRestroomMarkers(restroomsToDraw) {
                 openReviewModal(restroomName);
             };
         }
-        
         const viewReviewsButton = popup.querySelector('.view-reviews-button');
         if (viewReviewsButton) {
             viewReviewsButton.onclick = function() {
@@ -328,46 +314,36 @@ function applyFilters() {
 }
 
 // =======================================================
-//  --- FORM SUBMISSION LOGIC (WITH LOCATION FIX) ---
+//  --- FORM SUBMISSION LOGIC ---
 // =======================================================
 
-// --- "Add New Restroom" Form ---
 addRestroomForm.addEventListener('submit', function(e) {
     e.preventDefault();
-    
     const name = newRestroomNameInput.value;
     const hasPaper = newPaperCheckbox.checked ? 'Yes' : 'No';
     const hasSpray = newSprayCheckbox.checked ? 'Yes' : 'No';
     const condition = newConditionSelect.value;
-    
     if (!name) {
         addStatus.innerText = 'กรุณาใส่ชื่อห้องน้ำ';
         addStatus.className = 'status-message error';
         return;
     }
-    
     addStatus.innerText = 'กำลังค้นหาตำแหน่งปัจจุบันของคุณ...';
     addStatus.className = 'status-message';
-
-    // 1. Get a FRESH, NEW location *right now*
     navigator.geolocation.getCurrentPosition(
-        function(position) { // (A) If getting location is successful
-            
+        function(position) {
             const freshLat = position.coords.latitude;
             const freshLon = position.coords.longitude;
             addStatus.innerText = 'กำลังเพิ่ม...';
-
             const data = {
                 type: 'new_restroom',
                 name: name,
-                lat: freshLat, // <-- Use the NEW location
-                lon: freshLon, // <-- Use the NEW location
+                lat: freshLat,
+                lon: freshLon,
                 hasPaper: hasPaper,
                 hasSpray: hasSpray,
                 condition: condition
             };
-
-            // 3. Send data to the Vercel Proxy
             fetch(googleScriptURL, {
                 method: 'POST',
                 body: JSON.stringify(data),
@@ -387,9 +363,8 @@ addRestroomForm.addEventListener('submit', function(e) {
                 addStatus.innerText = 'เกิดข้อผิดพลาด (Fetch): ' + error.message;
                 addStatus.className = 'status-message error';
             });
-
         }, 
-        function(error) { // (B) If getting location fails
+        function(error) {
             console.error('Error getting fresh location:', error);
             addStatus.innerText = 'เกิดข้อผิดพลาด: ไม่สามารถรับตำแหน่งปัจจุบันของคุณได้';
             addStatus.className = 'status-message error';
@@ -397,8 +372,6 @@ addRestroomForm.addEventListener('submit', function(e) {
     );
 });
 
-
-// --- "Review Modal" Logic ---
 function openReviewModal(restroomName) {
     reviewTitle.innerText = `เขียนรีวิวสำหรับ "${restroomName}"`;
     reviewRestroomNameInput.value = restroomName;
