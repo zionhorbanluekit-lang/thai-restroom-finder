@@ -235,3 +235,40 @@ footer {
 .popup-score strong {
     color: var(--pico-color);
 }
+/* --- 11. NEW: COLLAPSIBLE FILTER --- */
+
+#filter-toggle-button {
+    width: 100%;
+    margin-bottom: var(--pico-spacing);
+    /* ทำให้เป็นปุ่มรอง แบบโปร่ง */
+    --pico-background-color: transparent;
+    border-style: dashed;
+}
+
+/* * ซ่อนฟิลเตอร์เป็นค่าเริ่มต้น 
+ * เราใช้ max-height: 0 เพื่อให้แอนิเมชันสไลด์ทำงานได้
+*/
+article.filter-container {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    overflow: hidden; /* ซ่อนเนื้อหาที่ล้นออกมา */
+    
+    /* ตั้งค่าแอนิเมชัน */
+    transition: all 0.3s ease-in-out;
+    
+    /* (โค้ดเก่าของคุณ) */
+    background-color: var(--body-background);
+    border: var(--card-border);
+    border-radius: var(--pico-border-radius);
+}
+
+/* * คลาส .is-visible นี้จะถูกเพิ่มโดย JavaScript
+ * เมื่อมันถูกเพิ่ม, ฟิลเตอร์จะสไลด์เปิดออก
+*/
+article.filter-container.is-visible {
+    max-height: 500px; /* (ตั้งค่าความสูงให้มากพอที่เนื้อหาจะแสดงได้หมด) */
+    padding: 1.5rem;
+    margin-bottom: var(--pico-spacing);
+}
