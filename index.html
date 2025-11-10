@@ -2,7 +2,7 @@
 <html lang="th" data-theme="auto">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale-1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ห้องน้ำใกล้ฉัน</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,7 +16,7 @@
 
     <main class="container-card">
 
-        <button id="refresh-button" class="secondary outline" aria-label="Refresh Data">🔄</button>
+        <button id="theme-switcher" class="secondary outline" aria-label="Switch theme"></button>
 
         <hgroup>
             <h1>ห้องน้ำใกล้ฉัน</h1>
@@ -37,6 +37,10 @@
                     </label>
                     <label>
                         <input type="checkbox" id="filter-spray"> มีสายฉีด
+                    </label>
+                    
+                    <label>
+                        <input type="checkbox" id="filter-smart-bidet"> ที่ฉีดอัจฉริยะ
                     </label>
                     <select id="filter-condition">
                         <option value="any">สภาพ (ทั้งหมด)</option>
@@ -78,7 +82,11 @@
                     <label>
                         <input type="checkbox" id="new-spray"> สายฉีด
                     </label>
-                </fieldset>
+                    
+                    <label>
+                        <input type="checkbox" id="new-smart-bidet"> ที่ฉีดอัตโนมัติ (Smart Bidet)
+                    </label>
+                    </fieldset>
                 
                 <label for="new-condition">สภาพโดยรวม:</label>
                 <select id="new-condition" required>
