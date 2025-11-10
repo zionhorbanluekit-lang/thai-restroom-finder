@@ -6,20 +6,6 @@ const locationSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqs
 const commentSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?gid=714346684&single=true&output=csv';
 
 
-// ⬇️ --- (1) NEW: GPS SPEED-UP OPTIONS --- ⬇️
-/**
- * These options tell the browser to get a location *faster*.
- * enableHighAccuracy: false (allows WiFi/cell tower location, much faster)
- * timeout: 8000 (Give up after 8 seconds)
- * maximumAge: 60000 (Accept a location that is 1 minute old)
- */
-const gpsOptions = {
-    enableHighAccuracy: false,
-    timeout: 8000,
-    maximumAge: 60000
-};
-// ⬆️ --- END OF NEW --- ⬆️
-
 // =======================================================
 //  --- GLOBAL VARIABLES ---
 // =======================================================
@@ -41,7 +27,9 @@ const restroomIcon = L.icon({
 // =======================================================
 document.addEventListener('DOMContentLoaded', () => {
 
-    // (Get all HTML elements...)
+    // =======================================================
+    //  --- GET HTML ELEMENTS ---
+    // =======================================================
     const statusElement = document.getElementById('status');
     const reviewModal = document.getElementById('review-modal');
     const reviewForm = document.getElementById('review-form');
@@ -56,12 +44,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const newRestroomNameInput = document.getElementById('new-restroom-name');
     const newPaperCheckbox = document.getElementById('new-paper');
     const newSprayCheckbox = document.getElementById('new-spray');
+    const newSmartBidetCheckbox = document.getElementById('new-smart-bidet'); // Get new element
     const newConditionSelect = document.getElementById('new-condition');
     const newCrowdSelect = document.getElementById('new-crowd');
     const addStatus = document.getElementById('add-status');
     const filterButton = document.getElementById('filter-button');
     const filterPaper = document.getElementById('filter-paper');
     const filterSpray = document.getElementById('filter-spray');
+    const filterSmartBidet = document.getElementById('filter-smart-bidet'); // Get new element
     const filterCondition = document.getElementById('filter-condition');
     const filterCrowd = document.getElementById('filter-crowd');
     const filterToggleButton = document.getElementById('filter-toggle-button');
@@ -73,11 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =======================================================
     //  --- INITIALIZATION ---
     // =======================================================
-    
-    // ⬇️ --- (2) UPDATED: Added gpsOptions --- ⬇️
-    // Get the first location (faster now)
     navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError, gpsOptions);
-    
     filterButton.addEventListener('click', applyFilters);
 
     filterToggleButton.addEventListener('click', () => {
@@ -93,7 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- ⬇️ (3) UPDATED: Refresh Button Logic --- ⬇️
     refreshButton.addEventListener('click', async () => {
         const statusElement = document.getElementById('status');
         statusElement.innerText = "กำลังอัปเดตตำแหน่ง...";
@@ -101,27 +86,17 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshButton.disabled = true;
 
         try {
-            // 1. Get a new, *fast* GPS position
             const newPosition = await new Promise((resolve, reject) => {
-                // Added gpsOptions here
                 navigator.geolocation.getCurrentPosition(resolve, reject, gpsOptions);
             });
-
-            // 2. Update the global location variable
             userLocation = {
                 lat: newPosition.coords.latitude,
                 lon: newPosition.coords.longitude
             };
-
-            // 3. Move the user's marker and re-center the map
             updateUserMarker(userLocation.lat, userLocation.lon);
             map.setView([userLocation.lat, userLocation.lon], 15);
-            
-            // 4. Re-fetch all data (which will re-calculate distances)
             await fetchData();
-
             statusElement.innerText = "อัปเดตตำแหน่งและข้อมูลแล้ว!";
-
         } catch (error) {
             console.error('Refresh error:', error);
             statusElement.innerText = "ไม่สามารถอัปเดตตำแหน่งได้";
@@ -130,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
             refreshButton.disabled = false;
         }
     });
-    // --- ⬆️ END OF UPDATED LOGIC ⬆️ ---
 
     filterDistance.addEventListener('input', () => {
         distanceValue.innerText = filterDistance.value;
@@ -148,11 +122,15 @@ document.addEventListener('DOMContentLoaded', () => {
 //  --- ALL FUNCTIONS (Defined globally) ---
 // =======================================================
 
+const gpsOptions = {
+    enableHighAccuracy: false,
+    timeout: 8000,
+    maximumAge: 60000
+};
+
 async function fetchData() {
     const statusElement = document.getElementById('status');
-    
     try {
-        // (1) Fetch Locations
         const response = await fetch(locationSheetURL + '&t=' + new Date().getTime());
         if (!response.ok) throw new Error(`Location Sheet Error: ${response.status} ${response.statusText}`);
         const csvText = await response.text();
@@ -162,16 +140,13 @@ async function fetchData() {
              statusElement.innerText = 'ไม่พบข้อมูลห้องน้ำใน Google Sheet';
         }
 
-        // (2) Fetch all Comments
         const commentResponse = await fetch(commentSheetURL + '&t=' + new Date().getTime());
         if (!commentResponse.ok) throw new Error(`Comment Sheet Error: ${commentResponse.status} ${commentResponse.statusText}`);
         const commentCsvText = await commentResponse.text();
         allComments = parseCommentCSV(commentCsvText);
 
-        // (3) Draw markers
-        applyFilters(); // Apply current filters to the new data
+        applyFilters(); 
         statusElement.innerText = `พบ ${allRestrooms.length} ห้องน้ำ และ ${allComments.length} รีวิว. (อัปเดตแล้ว)`;
-
     } catch (error) {
         console.error('Error fetching or parsing sheet:', error);
         statusElement.innerText = `เกิดข้อผิดพลาดในการโหลดข้อมูล: ${error.message}`;
@@ -229,7 +204,7 @@ function parseLocationCSV(csvText) {
     const dataLines = lines.slice(1);
     return dataLines.map(line => {
         const values = line.split(',');
-        if (values.length >= 7) {
+        if (values.length >= 8) { // Now expects 8 columns
             return {
                 name: values[0].trim(),
                 lat: parseFloat(values[1]),
@@ -237,7 +212,8 @@ function parseLocationCSV(csvText) {
                 hasPaper: values[3].trim(),
                 hasSpray: values[4].trim(),
                 condition: values[5].trim(),
-                crowdLevel: values[6].trim()
+                crowdLevel: values[6].trim(),
+                hasSmartBidet: values[7].trim() // New
             };
         }
         return null;
@@ -304,6 +280,9 @@ function clearAllMarkers() {
     currentMarkers = [];
 }
 
+/**
+ * ⬅️ UPDATED: This function is the only part with a text change
+ */
 function drawRestroomMarkers(restroomsToDraw) {
     if (!userLocation) return; 
 
@@ -332,7 +311,9 @@ function drawRestroomMarkers(restroomsToDraw) {
         const crowdStr = translateSpec(restroom.crowdLevel || 'N/A');
         const paperStr = translateSpec(restroom.hasPaper || 'N/A');
         const sprayStr = translateSpec(restroom.hasSpray || 'N/A');
+        const bidetStr = translateSpec(restroom.hasSmartBidet || 'N/A');
 
+        // --- ⬇️ UPDATED TEXT HERE ⬇️ ---
         const popupContent = `
             <b>${restroom.name}</b><br>
             ${scoreHtml}
@@ -341,12 +322,13 @@ function drawRestroomMarkers(restroomsToDraw) {
                 <b>สภาพ (Condition):</b> ${conditionStr}<br>
                 <b>ความหนาแน่น (Crowd):</b> ${crowdStr}<br>
                 <b>ทิชชู่ (Paper):</b> ${paperStr}<br>
-                <b>สายฉีด (Spray):</b> ${sprayStr}
-            </small><br>
+                <b>สายฉีด (Spray):</b> ${sprayStr}<br>
+                <b>ที่ฉีดอัตโนมัติ (Bidet):</b> ${bidetStr} </small><br>
             <button class="review-button" data-name="${restroom.name}">เขียนรีวิว</button>
             <button class="view-reviews-button" data-name="${restroom.name}">ดูรีวิวทั้งหมด</button>
             <div class="reviews-container"></div>
         `;
+        // --- ⬆️ END OF UPDATE ⬆️ ---
         
         const marker = L.marker([restroom.lat, restroom.lon], { icon: restroomIcon })
             .addTo(map)
@@ -401,6 +383,7 @@ function applyFilters() {
 
     const filterPaper = document.getElementById('filter-paper');
     const filterSpray = document.getElementById('filter-spray');
+    const filterSmartBidet = document.getElementById('filter-smart-bidet'); // Get new filter
     const filterCondition = document.getElementById('filter-condition');
     const filterCrowd = document.getElementById('filter-crowd');
     const statusElement = document.getElementById('status');
@@ -409,6 +392,7 @@ function applyFilters() {
 
     const wantPaper = filterPaper.checked;
     const wantSpray = filterSpray.checked;
+    const wantSmartBidet = filterSmartBidet.checked; // Get new filter value
     const wantCondition = filterCondition.value;
     const wantCrowd = filterCrowd.value;
 
@@ -419,9 +403,9 @@ function applyFilters() {
         if (distance > maxDistance) {
             return false;
         }
-
         if (wantPaper && restroom.hasPaper !== 'Yes') return false;
         if (wantSpray && restroom.hasSpray !== 'Yes') return false;
+        if (wantSmartBidet && restroom.hasSmartBidet !== 'Yes') return false; // Add filter check
         if (wantCondition !== 'any' && restroom.condition !== wantCondition) return false;
         if (wantCrowd !== 'any' && restroom.crowdLevel !== wantCrowd) return false;
         return true;
@@ -432,12 +416,12 @@ function applyFilters() {
     statusElement.innerText = `แสดงผล ${filteredRestrooms.length} จาก ${allRestrooms.length} แห่ง (ในระยะ ${maxDistance} กม.)`;
 }
 
-// --- ⬇️ (4) UPDATED: Add Restroom Form ⬇️ ---
 function handleAddRestroom(e) {
     e.preventDefault();
     const newRestroomNameInput = document.getElementById('new-restroom-name');
     const newPaperCheckbox = document.getElementById('new-paper');
     const newSprayCheckbox = document.getElementById('new-spray');
+    const newSmartBidetCheckbox = document.getElementById('new-smart-bidet'); // Get new element
     const newConditionSelect = document.getElementById('new-condition');
     const newCrowdSelect = document.getElementById('new-crowd');
     const addStatus = document.getElementById('add-status');
@@ -445,6 +429,7 @@ function handleAddRestroom(e) {
     const name = newRestroomNameInput.value;
     const hasPaper = newPaperCheckbox.checked ? 'Yes' : 'No';
     const hasSpray = newSprayCheckbox.checked ? 'Yes' : 'No';
+    const hasSmartBidet = newSmartBidetCheckbox.checked ? 'Yes' : 'No'; // Get new value
     const condition = newConditionSelect.value;
     const crowdLevel = newCrowdSelect.value;
 
@@ -462,7 +447,6 @@ function handleAddRestroom(e) {
     addStatus.innerText = 'กำลังค้นหาตำแหน่งปัจจุบันของคุณ...';
     addStatus.className = 'status-message';
     
-    // Get a fast, fresh location
     navigator.geolocation.getCurrentPosition(
         function(position) {
             const freshLat = position.coords.latitude;
@@ -476,7 +460,8 @@ function handleAddRestroom(e) {
                 hasPaper: hasPaper,
                 hasSpray: hasSpray,
                 condition: condition,
-                crowdLevel: crowdLevel
+                crowdLevel: crowdLevel,
+                hasSmartBidet: hasSmartBidet // Add new data
             };
             fetch(googleScriptURL, {
                 method: 'POST',
@@ -489,9 +474,7 @@ function handleAddRestroom(e) {
                     addStatus.innerText = 'เพิ่มห้องน้ำสำเร็จแล้ว! กำลังรีเฟรช...';
                     addStatus.className = 'status-message success';
                     document.getElementById('add-restroom-form').reset();
-                    
                     fetchData(); 
-                    
                 } else {
                     throw new Error(response.message);
                 }
@@ -506,7 +489,7 @@ function handleAddRestroom(e) {
             addStatus.innerText = 'เกิดข้อผิดพลาด: ไม่สามารถรับตำแหน่งปัจจุบันของคุณได้';
             addStatus.className = 'status-message error';
         },
-        gpsOptions // ⬅️ Added the fast GPS options here
+        gpsOptions
     );
 }
 
@@ -567,4 +550,3 @@ function handleReviewSubmit(e) {
         reviewStatus.className = 'status-message error';
     });
 }
-
