@@ -14,6 +14,7 @@ let userLocation = null;
 let allRestrooms = []; 
 let allComments = [];
 let currentMarkers = []; 
+let userMarker = null; // ⬅️ NEW: We will store the "Your Location" marker here
 const restroomIcon = L.icon({
     iconUrl: 'pin.svg',
     iconSize:     [38, 38],
@@ -32,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusElement = document.getElementById('status');
     const reviewModal = document.getElementById('review-modal');
     const reviewForm = document.getElementById('review-form');
+    // ... (all your other getElementById variables) ...
     const reviewTitle = document.getElementById('review-title');
     const reviewRestroomNameInput = document.getElementById('review-restroom-name');
     const reviewStarsInput = document.getElementById('review-stars');
@@ -76,22 +78,44 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Refresh Button Logic
+    // --- ⬇️ UPDATED: Refresh Button Logic ⬇️ ---
+    // This button will now update your location AND refresh the data.
     refreshButton.addEventListener('click', async () => {
         const statusElement = document.getElementById('status');
-        statusElement.innerText = "กำลังรีเฟรชข้อมูล...";
-        refreshButton.classList.add('is-loading'); // Start spinning
+        statusElement.innerText = "กำลังอัปเดตตำแหน่ง..."; // New text
+        refreshButton.classList.add('is-loading');
         refreshButton.disabled = true;
 
         try {
+            // 1. Get a new, fresh GPS position
+            const newPosition = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject);
+            });
+
+            // 2. Update the global location variable
+            userLocation = {
+                lat: newPosition.coords.latitude,
+                lon: newPosition.coords.longitude
+            };
+
+            // 3. Move the user's marker and re-center the map
+            updateUserMarker(userLocation.lat, userLocation.lon);
+            map.setView([userLocation.lat, userLocation.lon], 15);
+            
+            // 4. Re-fetch all data (which will re-calculate distances)
             await fetchData();
+
+            statusElement.innerText = "อัปเดตตำแหน่งและข้อมูลแล้ว!"; // New success message
+
         } catch (error) {
-            statusElement.innerText = "รีเฟรชไม่สำเร็จ";
+            console.error('Refresh error:', error);
+            statusElement.innerText = "ไม่สามารถอัปเดตตำแหน่งได้";
         } finally {
             refreshButton.classList.remove('is-loading');
             refreshButton.disabled = false;
         }
     });
+    // --- ⬆️ END OF UPDATED LOGIC ⬆️ ---
 
     filterDistance.addEventListener('input', () => {
         distanceValue.innerText = filterDistance.value;
@@ -148,10 +172,11 @@ async function onLocationSuccess(position) {
     };
     const statusElement = document.getElementById('status');
     statusElement.innerText = "กำลังโหลดแผนที่...";
-    loadMap(userLocation.lat, userLocation.lon);
+    
+    loadMap(userLocation.lat, userLocation.lon); // Load map
+    updateUserMarker(userLocation.lat, userLocation.lon); // Add user marker
 
-    // Now, run the fetch data function
-    await fetchData();
+    await fetchData(); // Fetch data
 }
 
 function onLocationError(error) {
@@ -160,8 +185,9 @@ function onLocationError(error) {
     statusElement.innerText = 'ไม่สามารถรับตำแหน่งของคุณได้ โปรดอนุญาตให้แชร์ตำแหน่ง';
 }
 
+// --- ⬇️ UPDATED: loadMap ⬇️ ---
+// This function now ONLY creates the map. The marker is handled separately.
 function loadMap(userLat, userLon) {
-    // Clear the map if it already exists
     if (map) {
         map.remove();
     }
@@ -169,8 +195,18 @@ function loadMap(userLat, userLon) {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap'
     }).addTo(map);
+}
+// --- ⬆️ END OF UPDATED FUNCTION ⬆️ ---
 
-    L.circleMarker([userLat, userLon], {
+// --- ⬇️ NEW: This function moves the "Your Location" circle ⬇️ ---
+function updateUserMarker(lat, lon) {
+    // Remove the old marker if it exists
+    if (userMarker) {
+        map.removeLayer(userMarker);
+    }
+    
+    // Add the new circle marker
+    userMarker = L.circleMarker([lat, lon], {
         radius: 10,
         color: '#007bff',
         fillColor: '#007bff',
@@ -179,6 +215,7 @@ function loadMap(userLat, userLon) {
         .bindPopup('<b>ตำแหน่งของคุณ</b>')
         .openPopup();
 }
+// --- ⬆️ END OF NEW FUNCTION ⬆️ ---
 
 function parseLocationCSV(csvText) {
     const lines = csvText.trim().split('\n');
@@ -261,7 +298,7 @@ function clearAllMarkers() {
 }
 
 function drawRestroomMarkers(restroomsToDraw) {
-    if (!userLocation) return; // Don't draw if we don't know user's location
+    if (!userLocation) return; 
 
     restroomsToDraw.forEach(restroom => {
         const distance = getDistance(userLocation.lat, userLocation.lon, restroom.lat, restroom.lon);
@@ -353,7 +390,7 @@ function showReviews(restroomName, popup, button) {
 }
 
 function applyFilters() {
-    if (!userLocation) return; // Don't filter if we don't have a location
+    if (!userLocation) return; 
 
     const filterPaper = document.getElementById('filter-paper');
     const filterSpray = document.getElementById('filter-spray');
@@ -387,10 +424,6 @@ function applyFilters() {
     drawRestroomMarkers(filteredRestrooms);
     statusElement.innerText = `แสดงผล ${filteredRestrooms.length} จาก ${allRestrooms.length} แห่ง (ในระยะ ${maxDistance} กม.)`;
 }
-
-// =======================================================
-//  --- FORM SUBMISSION LOGIC ---
-// =======================================================
 
 function handleAddRestroom(e) {
     e.preventDefault();
@@ -444,11 +477,10 @@ function handleAddRestroom(e) {
             .then(res => res.json())
             .then(response => {
                 if (response.status === 'success') {
-                    addStatus.innerText = 'เพิ่มห้องน้ำสำเร็จแล้ว! กำลังรีเฟรช...'; // 1. Updated message
+                    addStatus.innerText = 'เพิ่มห้องน้ำสำเร็จแล้ว! กำลังรีเฟรช...';
                     addStatus.className = 'status-message success';
                     document.getElementById('add-restroom-form').reset();
                     
-                    // 2. ⬇️ NEW: Call fetchData() to refresh the map ⬇️
                     fetchData(); 
                     
                 } else {
@@ -514,7 +546,6 @@ function handleReviewSubmit(e) {
             reviewStatus.className = 'status-message success';
             setTimeout(() => {
                 reviewModal.close();
-                // ⬇️ NEW: Also refresh data after submitting a review ⬇️
                 fetchData();
             }, 1500);
         } else {
@@ -526,4 +557,3 @@ function handleReviewSubmit(e) {
         reviewStatus.className = 'status-message error';
     });
 }
-
