@@ -22,7 +22,7 @@ const restroomIcon = L.icon({
 });
 
 // =======================================================
-//  --- RUN CODE AFTER HTML IS LOADED ---
+// ⬇️ UPDATED: This wrapper waits for the HTML to load ⬇️
 // =======================================================
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -54,9 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterToggleButton = document.getElementById('filter-toggle-button');
     const filterSection = document.getElementById('filter-section');
     const themeSwitcher = document.getElementById('theme-switcher');
+    const filterDistance = document.getElementById('filter-distance');
+    const distanceValue = document.getElementById('distance-value');
 
     // =======================================================
-    //  --- INITIALIZATION ---
+    // ⬇️ UPDATED: INITIALIZATION ⬇️
     // =======================================================
     navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError);
     filterButton.addEventListener('click', applyFilters);
@@ -84,10 +86,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.documentElement.setAttribute('data-theme', theme);
         if (theme === 'dark') {
             themeSwitcher.innerText = '☀️'; // Show sun icon
-            currentTheme = 'dark';
+            currentTheme = 'dark'; // Update our tracker
         } else {
             themeSwitcher.innerText = '🌙'; // Show moon icon
-            currentTheme = 'light';
+            currentTheme = 'light'; // Update our tracker
         }
     }
 
@@ -95,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const resolvedTheme = getComputedStyle(document.documentElement).getPropertyValue('color-scheme');
     
     // 2. Set the theme explicitly to "lock it in"
+    // This replaces "auto" with "light" or "dark"
     setTheme(resolvedTheme);
 
     // 3. Add the click listener
@@ -108,6 +111,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     // --- ⬆️ END OF FIXED LOGIC ⬆️ ---
 
+    // This updates the "X km" text as the user slides
+    filterDistance.addEventListener('input', () => {
+        distanceValue.innerText = filterDistance.value;
+    });
     
     // Attach listeners to forms
     addRestroomForm.addEventListener('submit', handleAddRestroom);
@@ -514,6 +521,3 @@ function handleReviewSubmit(e) {
         reviewStatus.className = 'status-message error';
     });
 }
-}
-
-
