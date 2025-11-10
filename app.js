@@ -22,9 +22,13 @@ const restroomIcon = L.icon({
 });
 
 // =======================================================
-// ⬇️ UPDATED: GET HTML ELEMENTS ⬇️
+//  --- RUN CODE AFTER HTML IS LOADED ---
 // =======================================================
 document.addEventListener('DOMContentLoaded', () => {
+
+    // =======================================================
+    //  --- GET HTML ELEMENTS ---
+    // =======================================================
     const statusElement = document.getElementById('status');
     const reviewModal = document.getElementById('review-modal');
     const reviewForm = document.getElementById('review-form');
@@ -50,14 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterToggleButton = document.getElementById('filter-toggle-button');
     const filterSection = document.getElementById('filter-section');
     const themeSwitcher = document.getElementById('theme-switcher');
-    
-    // --- (1) NEW: Get Distance Filter Elements ---
-    const filterDistance = document.getElementById('filter-distance');
-    const distanceValue = document.getElementById('distance-value');
-    // --- END NEW ---
 
     // =======================================================
-    // ⬇️ UPDATED: INITIALIZATION ⬇️
+    //  --- INITIALIZATION ---
     // =======================================================
     navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError);
     filterButton.addEventListener('click', applyFilters);
@@ -75,31 +74,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    themeSwitcher.addEventListener('click', () => {
-        const html = document.documentElement;
-        const currentTheme = html.getAttribute('data-theme');
-        if (currentTheme !== 'light') {
-            html.setAttribute('data-theme', 'light');
-            themeSwitcher.innerText = '🌙';
+    // --- ⬇️ NEW: FIXED THEME SWITCHER LOGIC ⬇️ ---
+    
+    // This variable will hold the *actual* current theme
+    let currentTheme = 'auto';
+
+    // Helper function to set the theme
+    function setTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        if (theme === 'dark') {
+            themeSwitcher.innerText = '☀️'; // Show sun icon
+            currentTheme = 'dark';
         } else {
-            html.setAttribute('data-theme', 'dark');
-            themeSwitcher.innerText = '☀️';
+            themeSwitcher.innerText = '🌙'; // Show moon icon
+            currentTheme = 'light';
+        }
+    }
+
+    // 1. Get the initial theme set by the browser (from "auto")
+    const resolvedTheme = getComputedStyle(document.documentElement).getPropertyValue('color-scheme');
+    
+    // 2. Set the theme explicitly to "lock it in"
+    setTheme(resolvedTheme);
+
+    // 3. Add the click listener
+    themeSwitcher.addEventListener('click', () => {
+        // Now we toggle the *variable* we are tracking
+        if (currentTheme === 'light') {
+            setTheme('dark');
+        } else {
+            setTheme('light');
         }
     });
+    // --- ⬆️ END OF FIXED LOGIC ⬆️ ---
 
-    const resolvedTheme = getComputedStyle(document.documentElement).getPropertyValue('color-scheme');
-    if (resolvedTheme === 'dark') {
-        themeSwitcher.innerText = '☀️';
-    } else {
-        themeSwitcher.innerText = '🌙';
-    }
-    
-    // --- (2) NEW: Add listener for the distance slider ---
-    // This updates the "X km" text as the user slides
-    filterDistance.addEventListener('input', () => {
-        distanceValue.innerText = filterDistance.value;
-    });
-    // --- END NEW ---
     
     // Attach listeners to forms
     addRestroomForm.addEventListener('submit', handleAddRestroom);
@@ -125,6 +133,7 @@ async function onLocationSuccess(position) {
 
     statusElement.innerText = "กำลังดึงข้อมูลห้องน้ำ...";
     try {
+        // (1) Fetch Locations
         const response = await fetch(locationSheetURL + '&t=' + new Date().getTime());
         if (!response.ok) throw new Error(`Location Sheet Error: ${response.status} ${response.statusText}`);
         const csvText = await response.text();
@@ -134,14 +143,15 @@ async function onLocationSuccess(position) {
              statusElement.innerText = 'ไม่พบข้อมูลห้องน้ำใน Google Sheet';
         }
 
+        // (2) Fetch all Comments
+        statusElement.innerText = `พบ ${allRestrooms.length} ห้องน้ำ. กำลังโหลดรีวิว...`;
         const commentResponse = await fetch(commentSheetURL + '&t=' + new Date().getTime());
         if (!commentResponse.ok) throw new Error(`Comment Sheet Error: ${commentResponse.status} ${commentResponse.statusText}`);
         const commentCsvText = await commentResponse.text();
         allComments = parseCommentCSV(commentCsvText);
 
-        // Draw markers for the *first time* (no filters applied yet)
-        // We'll apply the default distance filter here
-        applyFilters(); 
+        // (3) Draw markers
+        applyFilters(); // Apply default filters on first load
         statusElement.innerText = `พบ ${allRestrooms.length} ห้องน้ำ และ ${allComments.length} รีวิว.`;
 
     } catch (error) {
@@ -342,20 +352,14 @@ function showReviews(restroomName, popup, button) {
     button.style.display = 'none';
 }
 
-// =======================================================
-// ⬇️ UPDATED: applyFilters ⬇️
-// =======================================================
 function applyFilters() {
     const filterPaper = document.getElementById('filter-paper');
     const filterSpray = document.getElementById('filter-spray');
     const filterCondition = document.getElementById('filter-condition');
     const filterCrowd = document.getElementById('filter-crowd');
     const statusElement = document.getElementById('status');
-    
-    // --- (3) NEW: Get the max distance from the slider ---
     const filterDistance = document.getElementById('filter-distance');
     const maxDistance = parseFloat(filterDistance.value);
-    // --- END NEW ---
 
     const wantPaper = filterPaper.checked;
     const wantSpray = filterSpray.checked;
@@ -365,15 +369,11 @@ function applyFilters() {
     statusElement.innerText = 'กำลังฟิลเตอร์...';
     
     const filteredRestrooms = allRestrooms.filter(restroom => {
-        // --- (4) NEW: Add distance check ---
-        // First, check the distance. This is the fastest filter.
         const distance = getDistance(userLocation.lat, userLocation.lon, restroom.lat, restroom.lon);
         if (distance > maxDistance) {
             return false;
         }
-        // --- END NEW ---
 
-        // Then, check the other filters
         if (wantPaper && restroom.hasPaper !== 'Yes') return false;
         if (wantSpray && restroom.hasSpray !== 'Yes') return false;
         if (wantCondition !== 'any' && restroom.condition !== wantCondition) return false;
@@ -385,11 +385,6 @@ function applyFilters() {
     drawRestroomMarkers(filteredRestrooms);
     statusElement.innerText = `แสดงผล ${filteredRestrooms.length} จาก ${allRestrooms.length} แห่ง (ในระยะ ${maxDistance} กม.)`;
 }
-// ⬆️ END OF UPDATED FUNCTION ⬆️
-
-// =======================================================
-//  --- FORM SUBMISSION LOGIC ---
-// =======================================================
 
 function handleAddRestroom(e) {
     e.preventDefault();
@@ -519,4 +514,6 @@ function handleReviewSubmit(e) {
         reviewStatus.className = 'status-message error';
     });
 }
+}
+
 
