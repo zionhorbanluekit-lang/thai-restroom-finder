@@ -16,7 +16,7 @@
 
     <main class="container-card">
 
-        <button id="theme-switcher" class="secondary outline" aria-label="Switch theme"></button>
+        <button id="refresh-button" class="secondary outline" aria-label="Refresh Data">🔄</button>
 
         <hgroup>
             <h1>ห้องน้ำใกล้ฉัน</h1>
@@ -40,8 +40,9 @@
                     </label>
                     
                     <label>
-                        <input type="checkbox" id="filter-smart-bidet"> ที่ฉีดอัจฉริยะ
+                        <input type="checkbox" id="filter-smart-bidet"> ที่ฉีดอัตโนมัติ
                     </label>
+                    
                     <select id="filter-condition">
                         <option value="any">สภาพ (ทั้งหมด)</option>
                         <option value="Excellent">ยอดเยี่ยม</option>
@@ -86,7 +87,8 @@
                     <label>
                         <input type="checkbox" id="new-smart-bidet"> ที่ฉีดอัตโนมัติ (Smart Bidet)
                     </label>
-                    </fieldset>
+                    
+                </fieldset>
                 
                 <label for="new-condition">สภาพโดยรวม:</label>
                 <select id="new-condition" required>
