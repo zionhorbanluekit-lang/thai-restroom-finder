@@ -1,6 +1,5 @@
 /* --- 1. SETUP & CUSTOM FONT --- */
 :root {
-    /* Create our main color variables */
     --brand-color: #007bff;
     --brand-color-hover: #0056b3;
     --green-color: #198754;
@@ -10,15 +9,11 @@
     --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
     --card-border: 1px solid #e1e1e1;
 }
-
-/* Dark Mode setup */
 [data-theme="dark"] {
     --card-background: #2b303a;
     --body-background: #1d2025;
     --card-border: 1px solid #3c424e;
 }
-
-/* Use the Sarabun font */
 body, button, input, select, textarea {
     font-family: 'Sarabun', sans-serif;
 }
@@ -28,18 +23,16 @@ body {
     background-color: var(--body-background);
     color: var(--pico-color);
 }
-
-/* This is the main "card" for the content */
 main.container-card {
-    max-width: 800px; /* Max width for desktop */
-    width: 100%; /* Be 100% wide on mobile */
-    margin: 0 auto; /* No top/bottom margin on mobile */
-    padding: 1rem; /* Smaller padding for mobile */
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 1rem;
     background-color: var(--card-background);
     border: var(--card-border);
     border-radius: 0;
     box-shadow: none;
-    position: relative; /* Needed for the theme switcher */
+    position: relative; /* Needed for the refresh button */
 }
 
 /* --- 3. SECTIONS (Forms) --- */
@@ -59,7 +52,7 @@ article.form-container {
 
 /* --- 4. MAP & STATUS (MOBILE-FIRST) --- */
 #map {
-    height: 350px; /* Shorter map for mobile */
+    height: 350px;
     width: 100%;
     border-radius: var(--pico-border-radius);
     margin-bottom: var(--pico-spacing);
@@ -154,17 +147,11 @@ article.filter-container {
     border-radius: var(--pico-border-radius);
     overflow: hidden; 
 }
-
-/* Clickable header */
 .filter-toggle-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
-    /* * This is the fix: 
-     * 1.0rem padding on top/bottom (small)
-     * 1.5rem padding on left/right (adds space in front of text)
-     */
     padding: 1.0rem 1.5rem; 
 }
 .filter-toggle-header h3 {
@@ -174,39 +161,34 @@ article.filter-container {
 .filter-toggle-header:hover h3 {
     color: var(--brand-color);
 }
-
-/* The arrow icon */
 .toggle-icon {
     font-size: 1.2rem;
     font-weight: bold;
     transition: transform 0.3s ease-in-out;
     transform-origin: center;
 }
-
-/* The content that gets hidden/shown */
 .filter-content {
-    max-height: 0; /* HIDDEN BY DEFAULT */
+    max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease-in-out;
-    padding: 0 1.5rem; /* Set horizontal padding */
+    padding: 0 1.5rem;
 }
-
-/* This class is added by JS */
 article.filter-container.is-visible .filter-content {
     max-height: 500px; 
-    padding: 1.5rem; /* Add back full padding */
+    padding: 1.5rem;
     padding-top: 0; 
     border-top: 1px dashed var(--card-border);
     margin-top: 10px;
 }
-
-/* Rotate the icon when open */
 article.filter-container.is-visible .toggle-icon {
     transform: rotate(180deg);
 }
 
-/* --- 13. THEME SWITCHER BUTTON --- */
-#theme-switcher {
+/* --- 13. NEW: REFRESH BUTTON --- */
+/* (Replaced the old theme-switcher) */
+
+/* Position in top-right corner */
+#refresh-button {
     position: absolute;
     top: 1rem;
     right: 1.5rem;
@@ -215,31 +197,38 @@ article.filter-container.is-visible .toggle-icon {
     font-size: 1.1rem;
 }
 
+/* Mobile position adjustment */
 @media (max-width: 767px) {
-    #theme-switcher {
+    #refresh-button {
         top: 0.75rem;
         right: 0.75rem;
     }
 }
 
-/* --- 14. NEW: DISTANCE SLIDER --- */
+/* Spinning animation */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
 
+/* Class to add with JavaScript to make it spin */
+#refresh-button.is-loading {
+    animation: spin 1s linear infinite;
+}
+
+/* --- 14. DISTANCE SLIDER --- */
 .distance-filter {
     margin-top: 1rem;
     margin-bottom: 0.5rem;
 }
-
 .distance-filter label {
     font-size: 1rem;
     color: var(--pico-color);
 }
-
 .distance-filter label strong {
     color: var(--brand-color);
     font-size: 1.1em;
 }
-
-/* Make the slider track thicker */
-input[type="range"] {
+input[type]="range" {
     height: 12px;
 }
