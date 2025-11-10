@@ -55,8 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterSection = document.getElementById('filter-section');
     const filterDistance = document.getElementById('filter-distance');
     const distanceValue = document.getElementById('distance-value');
-    
-    // ⬇️ NEW: Get the refresh button ⬇️
     const refreshButton = document.getElementById('refresh-button');
 
     // =======================================================
@@ -78,33 +76,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ⬇️ NEW: Add listener for the refresh button ⬇️
+    // Refresh Button Logic
     refreshButton.addEventListener('click', async () => {
         const statusElement = document.getElementById('status');
         statusElement.innerText = "กำลังรีเฟรชข้อมูล...";
         refreshButton.classList.add('is-loading'); // Start spinning
-        
-        // Disable button to prevent double clicks
         refreshButton.disabled = true;
 
         try {
-            // Re-run the main data fetching logic
             await fetchData();
         } catch (error) {
             statusElement.innerText = "รีเฟรชไม่สำเร็จ";
         } finally {
-            // Stop spinning and re-enable button
             refreshButton.classList.remove('is-loading');
             refreshButton.disabled = false;
         }
     });
 
-    // This updates the "X km" text as the user slides
     filterDistance.addEventListener('input', () => {
         distanceValue.innerText = filterDistance.value;
     });
     
-    // Attach listeners to forms
     addRestroomForm.addEventListener('submit', handleAddRestroom);
     reviewForm.addEventListener('submit', handleReviewSubmit);
 });
@@ -117,7 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
 //  --- ALL FUNCTIONS (Defined globally) ---
 // =======================================================
 
-// ⬇️ NEW: This function holds all the data fetching logic ⬇️
 async function fetchData() {
     const statusElement = document.getElementById('status');
     
@@ -145,11 +136,9 @@ async function fetchData() {
     } catch (error) {
         console.error('Error fetching or parsing sheet:', error);
         statusElement.innerText = `เกิดข้อผิดพลาดในการโหลดข้อมูล: ${error.message}`;
-        // Rethrow error so the refresh button's 'catch' block can see it
         throw error;
     }
 }
-// ⬆️ END OF NEW FUNCTION ⬆️
 
 
 async function onLocationSuccess(position) {
@@ -172,6 +161,10 @@ function onLocationError(error) {
 }
 
 function loadMap(userLat, userLon) {
+    // Clear the map if it already exists
+    if (map) {
+        map.remove();
+    }
     map = L.map('map').setView([userLat, userLon], 15);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap'
@@ -268,6 +261,8 @@ function clearAllMarkers() {
 }
 
 function drawRestroomMarkers(restroomsToDraw) {
+    if (!userLocation) return; // Don't draw if we don't know user's location
+
     restroomsToDraw.forEach(restroom => {
         const distance = getDistance(userLocation.lat, userLocation.lon, restroom.lat, restroom.lon);
         const distanceStr = formatDistance(distance);
@@ -358,6 +353,8 @@ function showReviews(restroomName, popup, button) {
 }
 
 function applyFilters() {
+    if (!userLocation) return; // Don't filter if we don't have a location
+
     const filterPaper = document.getElementById('filter-paper');
     const filterSpray = document.getElementById('filter-spray');
     const filterCondition = document.getElementById('filter-condition');
@@ -390,6 +387,10 @@ function applyFilters() {
     drawRestroomMarkers(filteredRestrooms);
     statusElement.innerText = `แสดงผล ${filteredRestrooms.length} จาก ${allRestrooms.length} แห่ง (ในระยะ ${maxDistance} กม.)`;
 }
+
+// =======================================================
+//  --- FORM SUBMISSION LOGIC ---
+// =======================================================
 
 function handleAddRestroom(e) {
     e.preventDefault();
@@ -443,9 +444,13 @@ function handleAddRestroom(e) {
             .then(res => res.json())
             .then(response => {
                 if (response.status === 'success') {
-                    addStatus.innerText = 'เพิ่มห้องน้ำสำเร็จแล้ว!';
+                    addStatus.innerText = 'เพิ่มห้องน้ำสำเร็จแล้ว! กำลังรีเฟรช...'; // 1. Updated message
                     addStatus.className = 'status-message success';
                     document.getElementById('add-restroom-form').reset();
+                    
+                    // 2. ⬇️ NEW: Call fetchData() to refresh the map ⬇️
+                    fetchData(); 
+                    
                 } else {
                     throw new Error(response.message);
                 }
@@ -509,6 +514,8 @@ function handleReviewSubmit(e) {
             reviewStatus.className = 'status-message success';
             setTimeout(() => {
                 reviewModal.close();
+                // ⬇️ NEW: Also refresh data after submitting a review ⬇️
+                fetchData();
             }, 1500);
         } else {
             throw new Error(response.message);
@@ -519,3 +526,4 @@ function handleReviewSubmit(e) {
         reviewStatus.className = 'status-message error';
     });
 }
+
