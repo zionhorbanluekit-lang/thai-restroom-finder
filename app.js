@@ -22,7 +22,7 @@ const restroomIcon = L.icon({
 });
 
 // =======================================================
-// ⬇️ UPDATED: This wrapper waits for the HTML to load ⬇️
+//  --- RUN CODE AFTER HTML IS LOADED ---
 // =======================================================
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -53,12 +53,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterCrowd = document.getElementById('filter-crowd');
     const filterToggleButton = document.getElementById('filter-toggle-button');
     const filterSection = document.getElementById('filter-section');
-    const themeSwitcher = document.getElementById('theme-switcher');
     const filterDistance = document.getElementById('filter-distance');
     const distanceValue = document.getElementById('distance-value');
+    
+    // ⬇️ NEW: Get the refresh button ⬇️
+    const refreshButton = document.getElementById('refresh-button');
 
     // =======================================================
-    // ⬇️ UPDATED: INITIALIZATION ⬇️
+    //  --- INITIALIZATION ---
     // =======================================================
     navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError);
     filterButton.addEventListener('click', applyFilters);
@@ -76,40 +78,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- ⬇️ NEW: FIXED THEME SWITCHER LOGIC ⬇️ ---
-    
-    // This variable will hold the *actual* current theme
-    let currentTheme = 'auto';
+    // ⬇️ NEW: Add listener for the refresh button ⬇️
+    refreshButton.addEventListener('click', async () => {
+        const statusElement = document.getElementById('status');
+        statusElement.innerText = "กำลังรีเฟรชข้อมูล...";
+        refreshButton.classList.add('is-loading'); // Start spinning
+        
+        // Disable button to prevent double clicks
+        refreshButton.disabled = true;
 
-    // Helper function to set the theme
-    function setTheme(theme) {
-        document.documentElement.setAttribute('data-theme', theme);
-        if (theme === 'dark') {
-            themeSwitcher.innerText = '☀️'; // Show sun icon
-            currentTheme = 'dark'; // Update our tracker
-        } else {
-            themeSwitcher.innerText = '🌙'; // Show moon icon
-            currentTheme = 'light'; // Update our tracker
-        }
-    }
-
-    // 1. Get the initial theme set by the browser (from "auto")
-    const resolvedTheme = getComputedStyle(document.documentElement).getPropertyValue('color-scheme');
-    
-    // 2. Set the theme explicitly to "lock it in"
-    // This replaces "auto" with "light" or "dark"
-    setTheme(resolvedTheme);
-
-    // 3. Add the click listener
-    themeSwitcher.addEventListener('click', () => {
-        // Now we toggle the *variable* we are tracking
-        if (currentTheme === 'light') {
-            setTheme('dark');
-        } else {
-            setTheme('light');
+        try {
+            // Re-run the main data fetching logic
+            await fetchData();
+        } catch (error) {
+            statusElement.innerText = "รีเฟรชไม่สำเร็จ";
+        } finally {
+            // Stop spinning and re-enable button
+            refreshButton.classList.remove('is-loading');
+            refreshButton.disabled = false;
         }
     });
-    // --- ⬆️ END OF FIXED LOGIC ⬆️ ---
 
     // This updates the "X km" text as the user slides
     filterDistance.addEventListener('input', () => {
@@ -129,16 +117,10 @@ document.addEventListener('DOMContentLoaded', () => {
 //  --- ALL FUNCTIONS (Defined globally) ---
 // =======================================================
 
-async function onLocationSuccess(position) {
-    userLocation = {
-        lat: position.coords.latitude,
-        lon: position.coords.longitude
-    };
+// ⬇️ NEW: This function holds all the data fetching logic ⬇️
+async function fetchData() {
     const statusElement = document.getElementById('status');
-    statusElement.innerText = "กำลังโหลดแผนที่...";
-    loadMap(userLocation.lat, userLocation.lon);
-
-    statusElement.innerText = "กำลังดึงข้อมูลห้องน้ำ...";
+    
     try {
         // (1) Fetch Locations
         const response = await fetch(locationSheetURL + '&t=' + new Date().getTime());
@@ -151,20 +133,36 @@ async function onLocationSuccess(position) {
         }
 
         // (2) Fetch all Comments
-        statusElement.innerText = `พบ ${allRestrooms.length} ห้องน้ำ. กำลังโหลดรีวิว...`;
         const commentResponse = await fetch(commentSheetURL + '&t=' + new Date().getTime());
         if (!commentResponse.ok) throw new Error(`Comment Sheet Error: ${commentResponse.status} ${commentResponse.statusText}`);
         const commentCsvText = await commentResponse.text();
         allComments = parseCommentCSV(commentCsvText);
 
         // (3) Draw markers
-        applyFilters(); // Apply default filters on first load
-        statusElement.innerText = `พบ ${allRestrooms.length} ห้องน้ำ และ ${allComments.length} รีวิว.`;
+        applyFilters(); // Apply current filters to the new data
+        statusElement.innerText = `พบ ${allRestrooms.length} ห้องน้ำ และ ${allComments.length} รีวิว. (อัปเดตแล้ว)`;
 
     } catch (error) {
         console.error('Error fetching or parsing sheet:', error);
         statusElement.innerText = `เกิดข้อผิดพลาดในการโหลดข้อมูล: ${error.message}`;
+        // Rethrow error so the refresh button's 'catch' block can see it
+        throw error;
     }
+}
+// ⬆️ END OF NEW FUNCTION ⬆️
+
+
+async function onLocationSuccess(position) {
+    userLocation = {
+        lat: position.coords.latitude,
+        lon: position.coords.longitude
+    };
+    const statusElement = document.getElementById('status');
+    statusElement.innerText = "กำลังโหลดแผนที่...";
+    loadMap(userLocation.lat, userLocation.lon);
+
+    // Now, run the fetch data function
+    await fetchData();
 }
 
 function onLocationError(error) {
