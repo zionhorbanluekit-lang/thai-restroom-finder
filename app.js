@@ -6,6 +6,20 @@ const locationSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqs
 const commentSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?gid=714346684&single=true&output=csv';
 
 
+// ⬇️ --- (1) NEW: GPS SPEED-UP OPTIONS --- ⬇️
+/**
+ * These options tell the browser to get a location *faster*.
+ * enableHighAccuracy: false (allows WiFi/cell tower location, much faster)
+ * timeout: 8000 (Give up after 8 seconds)
+ * maximumAge: 60000 (Accept a location that is 1 minute old)
+ */
+const gpsOptions = {
+    enableHighAccuracy: false,
+    timeout: 8000,
+    maximumAge: 60000
+};
+// ⬆️ --- END OF NEW --- ⬆️
+
 // =======================================================
 //  --- GLOBAL VARIABLES ---
 // =======================================================
@@ -14,7 +28,7 @@ let userLocation = null;
 let allRestrooms = []; 
 let allComments = [];
 let currentMarkers = []; 
-let userMarker = null; // ⬅️ NEW: We will store the "Your Location" marker here
+let userMarker = null;
 const restroomIcon = L.icon({
     iconUrl: 'pin.svg',
     iconSize:     [38, 38],
@@ -27,13 +41,10 @@ const restroomIcon = L.icon({
 // =======================================================
 document.addEventListener('DOMContentLoaded', () => {
 
-    // =======================================================
-    //  --- GET HTML ELEMENTS ---
-    // =======================================================
+    // (Get all HTML elements...)
     const statusElement = document.getElementById('status');
     const reviewModal = document.getElementById('review-modal');
     const reviewForm = document.getElementById('review-form');
-    // ... (all your other getElementById variables) ...
     const reviewTitle = document.getElementById('review-title');
     const reviewRestroomNameInput = document.getElementById('review-restroom-name');
     const reviewStarsInput = document.getElementById('review-stars');
@@ -62,7 +73,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // =======================================================
     //  --- INITIALIZATION ---
     // =======================================================
-    navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError);
+    
+    // ⬇️ --- (2) UPDATED: Added gpsOptions --- ⬇️
+    // Get the first location (faster now)
+    navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError, gpsOptions);
+    
     filterButton.addEventListener('click', applyFilters);
 
     filterToggleButton.addEventListener('click', () => {
@@ -78,18 +93,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- ⬇️ UPDATED: Refresh Button Logic ⬇️ ---
-    // This button will now update your location AND refresh the data.
+    // --- ⬇️ (3) UPDATED: Refresh Button Logic --- ⬇️
     refreshButton.addEventListener('click', async () => {
         const statusElement = document.getElementById('status');
-        statusElement.innerText = "กำลังอัปเดตตำแหน่ง..."; // New text
+        statusElement.innerText = "กำลังอัปเดตตำแหน่ง...";
         refreshButton.classList.add('is-loading');
         refreshButton.disabled = true;
 
         try {
-            // 1. Get a new, fresh GPS position
+            // 1. Get a new, *fast* GPS position
             const newPosition = await new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject);
+                // Added gpsOptions here
+                navigator.geolocation.getCurrentPosition(resolve, reject, gpsOptions);
             });
 
             // 2. Update the global location variable
@@ -105,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 4. Re-fetch all data (which will re-calculate distances)
             await fetchData();
 
-            statusElement.innerText = "อัปเดตตำแหน่งและข้อมูลแล้ว!"; // New success message
+            statusElement.innerText = "อัปเดตตำแหน่งและข้อมูลแล้ว!";
 
         } catch (error) {
             console.error('Refresh error:', error);
@@ -173,10 +188,10 @@ async function onLocationSuccess(position) {
     const statusElement = document.getElementById('status');
     statusElement.innerText = "กำลังโหลดแผนที่...";
     
-    loadMap(userLocation.lat, userLocation.lon); // Load map
-    updateUserMarker(userLocation.lat, userLocation.lon); // Add user marker
+    loadMap(userLocation.lat, userLocation.lon);
+    updateUserMarker(userLocation.lat, userLocation.lon);
 
-    await fetchData(); // Fetch data
+    await fetchData();
 }
 
 function onLocationError(error) {
@@ -185,8 +200,6 @@ function onLocationError(error) {
     statusElement.innerText = 'ไม่สามารถรับตำแหน่งของคุณได้ โปรดอนุญาตให้แชร์ตำแหน่ง';
 }
 
-// --- ⬇️ UPDATED: loadMap ⬇️ ---
-// This function now ONLY creates the map. The marker is handled separately.
 function loadMap(userLat, userLon) {
     if (map) {
         map.remove();
@@ -196,16 +209,11 @@ function loadMap(userLat, userLon) {
         attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 }
-// --- ⬆️ END OF UPDATED FUNCTION ⬆️ ---
 
-// --- ⬇️ NEW: This function moves the "Your Location" circle ⬇️ ---
 function updateUserMarker(lat, lon) {
-    // Remove the old marker if it exists
     if (userMarker) {
         map.removeLayer(userMarker);
     }
-    
-    // Add the new circle marker
     userMarker = L.circleMarker([lat, lon], {
         radius: 10,
         color: '#007bff',
@@ -215,7 +223,6 @@ function updateUserMarker(lat, lon) {
         .bindPopup('<b>ตำแหน่งของคุณ</b>')
         .openPopup();
 }
-// --- ⬆️ END OF NEW FUNCTION ⬆️ ---
 
 function parseLocationCSV(csvText) {
     const lines = csvText.trim().split('\n');
@@ -425,6 +432,7 @@ function applyFilters() {
     statusElement.innerText = `แสดงผล ${filteredRestrooms.length} จาก ${allRestrooms.length} แห่ง (ในระยะ ${maxDistance} กม.)`;
 }
 
+// --- ⬇️ (4) UPDATED: Add Restroom Form ⬇️ ---
 function handleAddRestroom(e) {
     e.preventDefault();
     const newRestroomNameInput = document.getElementById('new-restroom-name');
@@ -454,6 +462,7 @@ function handleAddRestroom(e) {
     addStatus.innerText = 'กำลังค้นหาตำแหน่งปัจจุบันของคุณ...';
     addStatus.className = 'status-message';
     
+    // Get a fast, fresh location
     navigator.geolocation.getCurrentPosition(
         function(position) {
             const freshLat = position.coords.latitude;
@@ -496,7 +505,8 @@ function handleAddRestroom(e) {
             console.error('Error getting fresh location:', error);
             addStatus.innerText = 'เกิดข้อผิดพลาด: ไม่สามารถรับตำแหน่งปัจจุบันของคุณได้';
             addStatus.className = 'status-message error';
-        }
+        },
+        gpsOptions // ⬅️ Added the fast GPS options here
     );
 }
 
@@ -557,3 +567,4 @@ function handleReviewSubmit(e) {
         reviewStatus.className = 'status-message error';
     });
 }
+
