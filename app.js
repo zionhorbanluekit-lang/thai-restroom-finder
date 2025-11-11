@@ -2,8 +2,8 @@
 //  --- CONFIGURATION ---
 // =======================================================
 const googleScriptURL = '/api/gas-proxy';
-const locationSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?output=csv';
-const commentSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A26VHonp/pub?gid=714346684&single=true&output=csv';
+const locationSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A6VHonp/pub?output=csv';
+const commentSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTqqsedupK3z2iMcbU66Lo3xzuNH9RQWSVvyh6alsIgZ-cKAeGV0z1jl35-_JMzLspyjl7A6VHonp/pub?gid=714346684&single=true&output=csv';
 
 
 // =======================================================
@@ -14,7 +14,7 @@ let userLocation = null;
 let allRestrooms = []; 
 let allComments = [];
 let currentMarkers = []; 
-let userMarker = null;
+let userMarker = null; // <-- This is needed to move your location pin
 const restroomIcon = L.icon({
     iconUrl: 'pin.svg',
     iconSize:     [38, 38],
@@ -44,14 +44,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const newRestroomNameInput = document.getElementById('new-restroom-name');
     const newPaperCheckbox = document.getElementById('new-paper');
     const newSprayCheckbox = document.getElementById('new-spray');
-    const newSmartBidetCheckbox = document.getElementById('new-smart-bidet'); // Get new element
+    const newSmartBidetCheckbox = document.getElementById('new-smart-bidet');
     const newConditionSelect = document.getElementById('new-condition');
     const newCrowdSelect = document.getElementById('new-crowd');
     const addStatus = document.getElementById('add-status');
     const filterButton = document.getElementById('filter-button');
     const filterPaper = document.getElementById('filter-paper');
     const filterSpray = document.getElementById('filter-spray');
-    const filterSmartBidet = document.getElementById('filter-smart-bidet'); // Get new element
+    const filterSmartBidet = document.getElementById('filter-smart-bidet');
     const filterCondition = document.getElementById('filter-condition');
     const filterCrowd = document.getElementById('filter-crowd');
     const filterToggleButton = document.getElementById('filter-toggle-button');
@@ -79,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- ⬇️ THIS IS THE CORRECT REFRESH BUTTON LOGIC ⬇️ ---
     refreshButton.addEventListener('click', async () => {
         const statusElement = document.getElementById('status');
         statusElement.innerText = "กำลังอัปเดตตำแหน่ง...";
@@ -86,17 +87,26 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshButton.disabled = true;
 
         try {
+            // 1. Get a new, fast GPS position
             const newPosition = await new Promise((resolve, reject) => {
                 navigator.geolocation.getCurrentPosition(resolve, reject, gpsOptions);
             });
+
+            // 2. Update the global location variable
             userLocation = {
                 lat: newPosition.coords.latitude,
                 lon: newPosition.coords.longitude
             };
+
+            // 3. Move the user's marker and re-center the map
             updateUserMarker(userLocation.lat, userLocation.lon);
             map.setView([userLocation.lat, userLocation.lon], 15);
+            
+            // 4. Re-fetch all data (which will re-calculate distances)
             await fetchData();
+
             statusElement.innerText = "อัปเดตตำแหน่งและข้อมูลแล้ว!";
+
         } catch (error) {
             console.error('Refresh error:', error);
             statusElement.innerText = "ไม่สามารถอัปเดตตำแหน่งได้";
@@ -105,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
             refreshButton.disabled = false;
         }
     });
+    // --- ⬆️ END OF CORRECT LOGIC ⬆️ ---
 
     filterDistance.addEventListener('input', () => {
         distanceValue.innerText = filterDistance.value;
@@ -164,7 +175,7 @@ async function onLocationSuccess(position) {
     statusElement.innerText = "กำลังโหลดแผนที่...";
     
     loadMap(userLocation.lat, userLocation.lon);
-    updateUserMarker(userLocation.lat, userLocation.lon);
+    updateUserMarker(userLocation.lat, userLocation.lon); // Add the first marker
 
     await fetchData();
 }
@@ -175,6 +186,8 @@ function onLocationError(error) {
     statusElement.innerText = 'ไม่สามารถรับตำแหน่งของคุณได้ โปรดอนุญาตให้แชร์ตำแหน่ง';
 }
 
+// --- ⬇️ CORRECT loadMap FUNCTION ⬇️ ---
+// This function ONLY creates the map.
 function loadMap(userLat, userLon) {
     if (map) {
         map.remove();
@@ -184,11 +197,15 @@ function loadMap(userLat, userLon) {
         attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 }
+// --- ⬆️ END OF FUNCTION ⬆️ ---
 
+// --- ⬇️ CORRECT updateUserMarker FUNCTION ⬇️ ---
+// This function adds or moves the blue circle.
 function updateUserMarker(lat, lon) {
     if (userMarker) {
-        map.removeLayer(userMarker);
+        map.removeLayer(userMarker); // Remove old one
     }
+    // Add new one
     userMarker = L.circleMarker([lat, lon], {
         radius: 10,
         color: '#007bff',
@@ -198,13 +215,14 @@ function updateUserMarker(lat, lon) {
         .bindPopup('<b>ตำแหน่งของคุณ</b>')
         .openPopup();
 }
+// --- ⬆️ END OF FUNCTION ⬆️ ---
 
 function parseLocationCSV(csvText) {
     const lines = csvText.trim().split('\n');
     const dataLines = lines.slice(1);
     return dataLines.map(line => {
         const values = line.split(',');
-        if (values.length >= 8) { // Now expects 8 columns
+        if (values.length >= 8) {
             return {
                 name: values[0].trim(),
                 lat: parseFloat(values[1]),
@@ -213,7 +231,7 @@ function parseLocationCSV(csvText) {
                 hasSpray: values[4].trim(),
                 condition: values[5].trim(),
                 crowdLevel: values[6].trim(),
-                hasSmartBidet: values[7].trim() // New
+                hasSmartBidet: values[7].trim()
             };
         }
         return null;
@@ -280,9 +298,6 @@ function clearAllMarkers() {
     currentMarkers = [];
 }
 
-/**
- * ⬅️ UPDATED: This function is the only part with a text change
- */
 function drawRestroomMarkers(restroomsToDraw) {
     if (!userLocation) return; 
 
@@ -313,7 +328,6 @@ function drawRestroomMarkers(restroomsToDraw) {
         const sprayStr = translateSpec(restroom.hasSpray || 'N/A');
         const bidetStr = translateSpec(restroom.hasSmartBidet || 'N/A');
 
-        // --- ⬇️ UPDATED TEXT HERE ⬇️ ---
         const popupContent = `
             <b>${restroom.name}</b><br>
             ${scoreHtml}
@@ -323,12 +337,12 @@ function drawRestroomMarkers(restroomsToDraw) {
                 <b>ความหนาแน่น (Crowd):</b> ${crowdStr}<br>
                 <b>ทิชชู่ (Paper):</b> ${paperStr}<br>
                 <b>สายฉีด (Spray):</b> ${sprayStr}<br>
-                <b>ที่ฉีดอัตโนมัติ (Bidet):</b> ${bidetStr} </small><br>
+                <b>ที่ฉีดอัตโนมัติ (Bidet):</b> ${bidetStr}
+            </small><br>
             <button class="review-button" data-name="${restroom.name}">เขียนรีวิว</button>
             <button class="view-reviews-button" data-name="${restroom.name}">ดูรีวิวทั้งหมด</button>
             <div class="reviews-container"></div>
         `;
-        // --- ⬆️ END OF UPDATE ⬆️ ---
         
         const marker = L.marker([restroom.lat, restroom.lon], { icon: restroomIcon })
             .addTo(map)
@@ -383,7 +397,7 @@ function applyFilters() {
 
     const filterPaper = document.getElementById('filter-paper');
     const filterSpray = document.getElementById('filter-spray');
-    const filterSmartBidet = document.getElementById('filter-smart-bidet'); // Get new filter
+    const filterSmartBidet = document.getElementById('filter-smart-bidet');
     const filterCondition = document.getElementById('filter-condition');
     const filterCrowd = document.getElementById('filter-crowd');
     const statusElement = document.getElementById('status');
@@ -392,7 +406,7 @@ function applyFilters() {
 
     const wantPaper = filterPaper.checked;
     const wantSpray = filterSpray.checked;
-    const wantSmartBidet = filterSmartBidet.checked; // Get new filter value
+    const wantSmartBidet = filterSmartBidet.checked;
     const wantCondition = filterCondition.value;
     const wantCrowd = filterCrowd.value;
 
@@ -405,7 +419,7 @@ function applyFilters() {
         }
         if (wantPaper && restroom.hasPaper !== 'Yes') return false;
         if (wantSpray && restroom.hasSpray !== 'Yes') return false;
-        if (wantSmartBidet && restroom.hasSmartBidet !== 'Yes') return false; // Add filter check
+        if (wantSmartBidet && restroom.hasSmartBidet !== 'Yes') return false;
         if (wantCondition !== 'any' && restroom.condition !== wantCondition) return false;
         if (wantCrowd !== 'any' && restroom.crowdLevel !== wantCrowd) return false;
         return true;
@@ -421,7 +435,7 @@ function handleAddRestroom(e) {
     const newRestroomNameInput = document.getElementById('new-restroom-name');
     const newPaperCheckbox = document.getElementById('new-paper');
     const newSprayCheckbox = document.getElementById('new-spray');
-    const newSmartBidetCheckbox = document.getElementById('new-smart-bidet'); // Get new element
+    const newSmartBidetCheckbox = document.getElementById('new-smart-bidet');
     const newConditionSelect = document.getElementById('new-condition');
     const newCrowdSelect = document.getElementById('new-crowd');
     const addStatus = document.getElementById('add-status');
@@ -429,7 +443,7 @@ function handleAddRestroom(e) {
     const name = newRestroomNameInput.value;
     const hasPaper = newPaperCheckbox.checked ? 'Yes' : 'No';
     const hasSpray = newSprayCheckbox.checked ? 'Yes' : 'No';
-    const hasSmartBidet = newSmartBidetCheckbox.checked ? 'Yes' : 'No'; // Get new value
+    const hasSmartBidet = newSmartBidetCheckbox.checked ? 'Yes' : 'No';
     const condition = newConditionSelect.value;
     const crowdLevel = newCrowdSelect.value;
 
@@ -461,7 +475,7 @@ function handleAddRestroom(e) {
                 hasSpray: hasSpray,
                 condition: condition,
                 crowdLevel: crowdLevel,
-                hasSmartBidet: hasSmartBidet // Add new data
+                hasSmartBidet: hasSmartBidet
             };
             fetch(googleScriptURL, {
                 method: 'POST',
